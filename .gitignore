@@ -1,0 +1,11 @@
+# .gitignore for Test-Against-Blead
+/MANIFEST.bak
+/Makefile
+/Makefile.old
+/Test-Against-Blead-*.tar.gz
+/MYMETA.yml
+/MYMETA.json
+/blib
+/pm_to_blib
+/cover_db/
+*.swp
