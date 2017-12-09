@@ -1,28 +1,20 @@
 package Test::Against::Blead;
 use strict;
+our $VERSION = '0.01';
+use Carp;
 
-BEGIN {
-    use Exporter ();
-    use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = '0.01';
-    @ISA         = qw(Exporter);
-    #Give a hoot don't pollute, do not export more than needed by default
-    @EXPORT      = qw();
-    @EXPORT_OK   = qw();
-    %EXPORT_TAGS = ();
-}
+sub new {
+    my ($class, $args) = @_;
+    $args //= {};
 
+    croak "Argument to constructor must be hashref"
+        unless ref($args) eq 'HASH';
 
-sub new
-{
-    my ($class, %parameters) = @_;
+    my $data = {};
 
-    my $self = bless ({}, ref ($class) || $class);
-
-    return $self;
+    return bless $data, $class;
 }
 
 
 1;
-# The preceding line will help the module return a true value
 
