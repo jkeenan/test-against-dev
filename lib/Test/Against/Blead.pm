@@ -16,7 +16,6 @@ use Perl::Download::FTP;
 
 sub new {
     my ($class, $args) = @_;
-    $args //= {};
 
     croak "Argument to constructor must be hashref"
         unless ref($args) eq 'HASH';
@@ -76,10 +75,10 @@ CPANREPORTERDIR="$VTESTINGDIR/.cpanreporter"
 
 sub perform_tarball_download {
     my ($self, $args) = @_;
-    my $verbose = delete $args->{verbose} || '';
-    my $mock = delete $args->{mock} || '';
     croak "perform_tarball_download: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    my $mock = delete $args->{mock} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
         host hostdir release compression
     | );
@@ -136,5 +135,17 @@ sub get_release_dir {
     }
 }
 
+sub access_configure_command {
+    my ($self, $arg) = @_;
+    my $cmd;
+    if (length $arg) {
+        $cmd = $arg;
+    }
+    else {
+        $cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none"
+    }
+    $self->{configure_command} = $cmd;
+}
+    
 1;
 

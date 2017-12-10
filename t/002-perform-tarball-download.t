@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 15;
 use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
@@ -21,10 +21,25 @@ isa_ok ($self, 'Test::Against::Blead');
 my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
+{
+    local $@;
+    eval {
+        my $rv = $self->perform_tarball_download( [
+            host                => $host,
+            hostdir             => $hostdir,
+            release             => 'perl-5.27.1',
+            compression         => 'gz',
+            verbose             => 0,
+            mock                => 1,
+      ] );
+    };
+    like($@, qr/perform_tarball_download: Must supply hash ref as argument/,
+        "perform_tarball_download: Got expected error message for lack of hashref as argument");
+}
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 9
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 11 
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
-    my ($rv, $stdout, $release_dir);
+    my ($rv, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
 
     {
         local $@;
@@ -43,6 +58,14 @@ SKIP: {
     ok($rv, 'perform_tarball_download: returned true value when mocking');
     $release_dir = $self->get_release_dir();
     ok(-d $release_dir, "Located release dir: $release_dir");
+    $configure_command = $self->access_configure_command();
+    is($configure_command,
+       "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none",
+        "Got default configure command"
+    );
+    $alt = "sh ./Configure -des -Dusedevel -Dprefix=$self->get_release_dir -Uversiononly -Dman1dir=none -Dman3dir=none";
+    $configure_command = $self->access_configure_command($alt);
+    is($configure_command, $alt, "Got user-specified configure command");
 
     $stdout = capture_stdout {
         $rv = $self->perform_tarball_download( {
@@ -69,6 +92,7 @@ SKIP: {
                 release             => 'perl-5.27.2',
                 compression         => 'xz',
                 verbose             => 1,
+                mock                => 0,
             } );
         };
         ok($rv, 'perform_tarball_download: returned true value');
