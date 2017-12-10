@@ -106,7 +106,7 @@ sub perform_tarball_download {
         host        => $self->{host},
         dir         => $self->{hostdir},
         Passive     => 1,
-        verbose     => 1,
+        verbose     => $verbose,
     } );
 
     unless ($mock) {
