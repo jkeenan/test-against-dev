@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 11;
 use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
 use Capture::Tiny ( qw| capture_stdout | );
@@ -22,9 +22,9 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 5
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 8
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
-    my ($rv, $stdout);
+    my ($rv, $stdout, $release_dir);
     $rv = $self->perform_tarball_download( {
         host                => $host,
         hostdir             => $hostdir,
@@ -34,6 +34,8 @@ SKIP: {
         mock                => 1,
     } );
     ok($rv, 'perform_tarball_download: returned true value when mocking');
+    $release_dir = $self->get_release_dir();
+    ok(-d $release_dir, "Located release dir: $release_dir");
 
     $stdout = capture_stdout {
         $rv = $self->perform_tarball_download( {
@@ -46,10 +48,12 @@ SKIP: {
         } );
     };
     ok($rv, 'perform_tarball_download: returned true value when mocking and requesting verbose output');
-    like($stdout, qr/^Mocking/, "Got expected verbose output");
+    like($stdout, qr/Mocking/, "Got expected verbose output");
+    $release_dir = $self->get_release_dir();
+    ok(-d $release_dir, "Located release dir: $release_dir");
 
     SKIP: {
-        skip 'Live FTP download', 3 unless $ENV{PERL_AUTHOR_TESTING};
+        skip 'Live FTP download', 4 unless $ENV{PERL_AUTHOR_TESTING};
         note("Performing live FTP download of Perl tarball;\n  this may take a while.");
         $stdout = capture_stdout {
             $rv = $self->perform_tarball_download( {
@@ -61,6 +65,8 @@ SKIP: {
             } );
         };
         ok($rv, 'perform_tarball_download: returned true value');
+        $release_dir = $self->get_release_dir();
+        ok(-d $release_dir, "Located release dir: $release_dir");
         ok(-f $rv, "Downloaded tarball: $rv");
         like($stdout, qr/^Beginning FTP download/s, "Got expected verbose output");
     }

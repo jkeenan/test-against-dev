@@ -101,7 +101,7 @@ sub perform_tarball_download {
     my $this_release_dir = File::Spec->catdir($self->get_testing_dir(), $self->{release});
     unless (-d $this_release_dir) { make_path($this_release_dir, { mode => 0755 }); }
     croak "Could not locate $this_release_dir" unless (-d $this_release_dir);
-    $self->{this_release_dir} = $this_release_dir;
+    $self->{release_dir} = $this_release_dir;
 
     my $ftpobj = Perl::Download::FTP->new( {
         host        => $self->{host},
@@ -123,6 +123,16 @@ sub perform_tarball_download {
     else {
         say "Mocking; not really attempting FTP download" if $verbose;
         return 1;
+    }
+}
+
+sub get_release_dir {
+    my $self = shift;
+    if (! defined $self->{release_dir}) {
+        croak "release directory has not yet been defined; run perform_tarball_download()";
+    }
+    else {
+        return $self->{release_dir};
     }
 }
 
