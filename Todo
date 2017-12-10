@@ -1,5 +1,14 @@
 TODO list for Perl module Test::Against::Blead
 
-- Nothing yet
+- Adapt t/*.t as below.
+
+unless ($ENV{PERL_ALLOW_NETWORK_TESTING}) {
+    plan 'skip_all' => "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests";
+}
+else {
+    plan tests => 20;
+}
+use Test::RequiresInternet ('ftp.cpan.org' => 21);
+
 
 

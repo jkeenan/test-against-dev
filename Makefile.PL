@@ -13,6 +13,7 @@ WriteMakefile(
                     'Data::Dump'                        => 0,
                     'File::Path'                        => 2.15,
                     'File::Spec'                        => 0,
+                     'File::Temp'                       => 0,
 #                     'App::cpanminus::reporter'         => 0,
 #                     'Carp'                             => 0,
 #                     'CPAN::Testers::Common::Client'    => 0,
@@ -25,8 +26,8 @@ WriteMakefile(
     },
     ( $mm_ver < 6.63_03 ? 'BUILD_REQUIRES' : 'TEST_REQUIRES' ) =>  {
                      'Test::Simple'                     => 0.44,
-#                     'Capture::Tiny'                    => 0,
-#                     'File::Temp'                       => 0,
+                     'Capture::Tiny'                    => 0,
+                     'Test::RequiresInternet'           => 0,
 #                     'Path::Tiny'                       => 0,
     },
 );

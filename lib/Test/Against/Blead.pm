@@ -5,6 +5,8 @@ our $VERSION = '0.01';
 use Carp;
 use File::Path ( qw| make_path | );
 use File::Spec;
+use File::Temp ( qw| tempdir | );
+use Perl::Download::FTP;
 
 # What args must be passed to constructor?
 # application top-level directory
@@ -35,7 +37,7 @@ sub new {
         $data->{"${dir}_dir"} = $fdir;
     }
 
-    #my $self = { %Fields, %{$data} };
+    $data->{release_pattern} = qr/^perl-5\.\d+\.\d{1,2}$/;
     return bless $data, $class;
 }
 
@@ -57,6 +59,71 @@ sub get_testing_dir {
 sub get_results_dir {
     my $self = shift;
     return $self->{results_dir};
+}
+
+=pod
+
+VTESTINGDIR="$TESTINGDIR/$RELEASE"
+CPANMDIR="$VTESTINGDIR/.cpanm"
+CPANREPORTERDIR="$VTESTINGDIR/.cpanreporter"
+    --host=ftp.funet.fi \
+    --hostdir=/pub/languages/perl/CPAN/src/5.0 \
+    --release=$TARBALL \
+    --localpath=/home/jkeenan/var/bbc \
+    --verbose \
+
+=cut
+
+sub perform_tarball_download {
+    my ($self, $args) = @_;
+    my $verbose = delete $args->{verbose} || '';
+    my $mock = delete $args->{mock} || '';
+    croak "perform_tarball_download: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my %eligible_args = map { $_ => 1 } ( qw|
+        host hostdir release compression
+    | );
+    for my $k (keys %$args) {
+        croak "perform_tarball_download: '$k' is not a valid element"
+            unless $eligible_args{$k};
+    }
+    croak "perform_tarball_download: '$args->{release}' does not conform to pattern"
+        unless $args->{release} =~ m/$self->{release_pattern}/;
+
+    my %eligible_compressions = map { $_ => 1 } ( qw| gz bz2 xz | );
+    croak "perform_tarball_download: '$args->{compression}' is not a valid compression format"
+        unless $eligible_compressions{$args->{compression}};
+
+    $self->{$_} = $args->{$_} for keys %$args;
+
+    $self->{tarball} = "$self->{release}.tar.$self->{compression}";
+
+    my $this_release_dir = File::Spec->catdir($self->get_testing_dir(), $self->{release});
+    unless (-d $this_release_dir) { make_path($this_release_dir, { mode => 0755 }); }
+    croak "Could not locate $this_release_dir" unless (-d $this_release_dir);
+    $self->{this_release_dir} = $this_release_dir;
+
+    my $ftpobj = Perl::Download::FTP->new( {
+        host        => $self->{host},
+        dir         => $self->{hostdir},
+        Passive     => 1,
+        verbose     => 1,
+    } );
+
+    unless ($mock) {
+        say "Beginning FTP download (this will take a few minutes)" if $verbose;
+        $self->{workdir} = tempdir(CLEANUP => 1);
+        my $tarball_path = $ftpobj->get_specific_release( {
+            release         => $self->{tarball},
+            path            => $self->{workdir},
+        } );
+        croak "Tarball $tarball_path not found: $!" unless (-f $tarball_path);
+        return $tarball_path;
+    }
+    else {
+        say "Mocking; not really attempting FTP download" if $verbose;
+        return 1;
+    }
 }
 
 1;
