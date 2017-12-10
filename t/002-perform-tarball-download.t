@@ -3,10 +3,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 12;
 use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
-use Capture::Tiny ( qw| capture_stdout | );
+use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Test::RequiresInternet ('ftp.funet.fi' => 21);
 BEGIN { use_ok( 'Test::Against::Blead' ); }
 
@@ -22,9 +22,16 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 8
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 9
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
     my ($rv, $stdout, $release_dir);
+
+    {
+        local $@;
+        eval { $release_dir = $self->get_release_dir(); };
+        like($@, qr/release directory has not yet been defined; run perform_tarball_download\(\)/,
+            "get_release_dir: Got expected error message for premature call");
+    };
     $rv = $self->perform_tarball_download( {
         host                => $host,
         hostdir             => $hostdir,
