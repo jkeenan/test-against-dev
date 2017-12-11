@@ -7,4 +7,5 @@ MANIFEST.SKIP
 README
 t/001-new.t
 t/002-perform-tarball-download.t
+t/003-test-against-dev.t
 Todo

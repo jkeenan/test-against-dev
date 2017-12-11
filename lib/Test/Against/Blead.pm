@@ -100,14 +100,23 @@ sub perform_tarball_download {
     } );
 
     unless ($mock) {
-        say "Beginning FTP download (this will take a few minutes)" if $verbose;
-        $self->{workdir} = tempdir(CLEANUP => 1);
+        $self->{workdir} ||= tempdir(CLEANUP => 1);
+        if ($verbose) {
+            say "Beginning FTP download (this will take a few minutes)";
+            say "Perl configure-build-install cycle will be performed in $self->{workdir}";
+        }
         my $tarball_path = $ftpobj->get_specific_release( {
             release         => $self->{tarball},
             path            => $self->{workdir},
         } );
-        croak "Tarball $tarball_path not found: $!" unless (-f $tarball_path);
-        return $tarball_path;
+        unless (-f $tarball_path) {
+            croak "Tarball $tarball_path not found: $!";
+        }
+        else {
+            say "Path to tarball is $tarball_path" if $verbose;
+            $self->{tarball_path} = $tarball_path;
+            return ($tarball_path, $self->{workdir});
+        }
     }
     else {
         say "Mocking; not really attempting FTP download" if $verbose;

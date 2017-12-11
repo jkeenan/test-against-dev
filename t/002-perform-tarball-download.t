@@ -24,7 +24,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 {
     local $@;
     eval {
-        my $rv = $self->perform_tarball_download( [
+        my ($tarball_path, $workdir) = $self->perform_tarball_download( [
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -41,7 +41,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_key = 'foo';
     eval {
-        my $rv = $self->perform_tarball_download( {
+        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -59,7 +59,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_release = '5.27.1';
     eval {
-        my $rv = $self->perform_tarball_download( {
+        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => $bad_release,
@@ -76,7 +76,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_compression = 'foo';
     eval {
-        my $rv = $self->perform_tarball_download( {
+        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -93,7 +93,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_workdir = '/foo/bar/baz';
     eval {
-        my $rv = $self->perform_tarball_download( {
+        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -108,9 +108,9 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 17
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 21
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
-    my ($rv, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
+    my ($tarball_path, $workdir, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
 
     {
         local $@;
@@ -118,7 +118,7 @@ SKIP: {
         like($@, qr/release directory has not yet been defined; run perform_tarball_download\(\)/,
             "get_release_dir: Got expected error message for premature call");
     };
-    $rv = $self->perform_tarball_download( {
+    ($tarball_path, $workdir) = $self->perform_tarball_download( {
         host                => $host,
         hostdir             => $hostdir,
         release             => 'perl-5.27.1',
@@ -126,7 +126,7 @@ SKIP: {
         verbose             => 0,
         mock                => 1,
     } );
-    ok($rv, 'perform_tarball_download: returned true value when mocking');
+    ok($tarball_path, 'perform_tarball_download: returned true value when mocking');
     $release_dir = $self->get_release_dir();
     ok(-d $release_dir, "Located release dir: $release_dir");
     $configure_command = $self->access_configure_command();
@@ -145,7 +145,7 @@ SKIP: {
     is($make_install_command, $alt, "Got user specified make install command");
 
     $stdout = capture_stdout {
-        $rv = $self->perform_tarball_download( {
+        ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.2',
@@ -154,16 +154,16 @@ SKIP: {
             mock                => 1,
         } );
     };
-    ok($rv, 'perform_tarball_download: returned true value when mocking and requesting verbose output');
+    ok($tarball_path, 'perform_tarball_download: returned true value when mocking and requesting verbose output');
     like($stdout, qr/Mocking/, "Got expected verbose output");
     $release_dir = $self->get_release_dir();
     ok(-d $release_dir, "Located release dir: $release_dir");
 
     SKIP: {
-        skip 'Live FTP download', 7 unless $ENV{PERL_AUTHOR_TESTING};
+        skip 'Live FTP download', 11 unless $ENV{PERL_AUTHOR_TESTING};
         note("Performing live FTP download of Perl tarball;\n  this may take a while.");
         $stdout = capture_stdout {
-            $rv = $self->perform_tarball_download( {
+            ($tarball_path, $workdir) = $self->perform_tarball_download( {
                 host                => $host,
                 hostdir             => $hostdir,
                 release             => 'perl-5.27.2',
@@ -172,22 +172,29 @@ SKIP: {
                 mock                => 0,
             } );
         };
-        ok($rv, 'perform_tarball_download: returned true value');
+        ok($tarball_path, 'perform_tarball_download: returned true value');
         $release_dir = $self->get_release_dir();
         ok(-d $release_dir, "Located release dir: $release_dir");
-        ok(-f $rv, "Downloaded tarball: $rv");
-        like($stdout, qr/^Beginning FTP download/s, "Got expected verbose output");
+        ok(-f $tarball_path, "Downloaded tarball: $tarball_path");
+        ok(-d $workdir, "Located work directory: $workdir");
+        like($stdout, qr/Beginning FTP download/s,
+            "Got expected verbose output: starting download");
+        like($stdout, qr/Perl configure-build-install cycle will be performed in $workdir/s,
+            "Got expected verbose output: cycle location");
+        like($stdout, qr/Path to tarball is $tarball_path/s,
+            "Got expected verbose output: tarball path");
 
-        $rv = $self->perform_tarball_download( {
+        ($tarball_path, $workdir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.3',
             compression         => 'xz',
         } );
-        ok($rv, 'perform_tarball_download: returned true value');
+        ok($tarball_path, 'perform_tarball_download: returned true value');
         $release_dir = $self->get_release_dir();
         ok(-d $release_dir, "Located release dir: $release_dir");
-        ok(-f $rv, "Downloaded tarball: $rv");
+        ok(-f $tarball_path, "Downloaded tarball: $tarball_path");
+        ok(-d $workdir, "Located work directory: $workdir");
     }
 }
 
