@@ -3,6 +3,7 @@ use strict;
 use 5.10.1;
 our $VERSION = '0.01';
 use Carp;
+use Cwd;
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir | );
@@ -100,7 +101,10 @@ sub perform_tarball_download {
     } );
 
     unless ($mock) {
-        $self->{workdir} ||= tempdir(CLEANUP => 1);
+        if (! $self->{workdir}) {
+            $self->{restore_to_dir} = cwd();
+            $self->{workdir} = tempdir(CLEANUP => 1);
+        }
         if ($verbose) {
             say "Beginning FTP download (this will take a few minutes)";
             say "Perl configure-build-install cycle will be performed in $self->{workdir}";
@@ -141,7 +145,10 @@ sub access_configure_command {
         $cmd = $arg;
     }
     else {
-        $cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none"
+        #$cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none"
+        $cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=";
+        $cmd .= $self->get_release_dir;
+        $cmd .= " -Dman1dir=none -Dman3dir=none";
     }
     $self->{configure_command} = $cmd;
 }
@@ -156,6 +163,47 @@ sub access_make_install_command {
         $cmd = "make install"
     }
     $self->{make_install_command} = $cmd;
+}
+
+sub configure_build_install_perl {
+    my ($self, $args) = @_;
+    my $cwd = cwd();
+    $args //= {};
+    croak "perform_tarball_download: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+
+    # Use default configure and make install commands unless an argument has
+    # been passed.
+    $self->access_configure_command($args->{configure_command} || '');
+    $self->access_make_install_command($args->{make_install_command} || '');
+
+    chdir $self->{workdir} or croak "Unable to change to $self->{workdir}";
+    my $untar_command = ($verbose) ? 'tar xzvf' : 'tar xzf';
+    system(qq|$untar_command $self->{tarball_path}|)
+        and croak "Unable to untar $self->{tarball_path}";
+    say "Tarball has been untarred into ", File::Spec->catdir($self->{workdir}, $self->{release})
+        if $verbose;
+    my $build_dir = $self->{release};
+    chdir $build_dir or croak "Unable to change to $build_dir";
+    say "Configuring perl with '$self->{configure_command}'" if $verbose;
+    system(qq|$self->{configure_command}|)
+        and croak "Unable to configure with '$self->{configure_command}'";
+    say "Building and installing perl with '$self->{make_install_command}'" if $verbose;
+    system(qq|$self->{make_install_command}|)
+        and croak "Unable to build and install with '$self->{make_install_command}'";
+    my $rdir = $self->get_release_dir();
+    my $bindir = File::Spec->catdir($rdir, 'bin');
+    my $libdir = File::Spec->catdir($rdir, 'lib');
+    my $this_perl = File::Spec->catfile($bindir, 'perl');
+    croak "Could not locate '$bindir'" unless (-d $bindir);
+    croak "Could not locate '$libdir'" unless (-d $libdir);
+    croak "Could not locate '$this_perl'" unless (-f $this_perl);
+    chdir $cwd or croak "Unable to change back to $cwd";
+    if ($self->{restore_to_dir}) {
+        chdir $self->{restore_to_dir} or croak "Unable to change back to $self->{restore_to_dir}";
+    }
+    return $this_perl;
 }
 
 1;

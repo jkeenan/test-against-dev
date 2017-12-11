@@ -22,7 +22,7 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip 'Live FTP download', 7
+    skip 'Live FTP download', 8
         unless $ENV{PERL_ALLOW_NETWORK_TESTING} and $ENV{PERL_AUTHOR_TESTING};
 
     my ($stdout, $stderr);
@@ -49,6 +49,9 @@ SKIP: {
         "Got expected verbose output: cycle location");
     like($stdout, qr/Path to tarball is $tarball_path/s,
         "Got expected verbose output: tarball path");
+
+    my $this_perl = $self->configure_build_install_perl({ verbose => 1 });
+    ok(-f $this_perl, "Installed $this_perl");
 }
 
 done_testing();

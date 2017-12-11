@@ -131,10 +131,10 @@ SKIP: {
     ok(-d $release_dir, "Located release dir: $release_dir");
     $configure_command = $self->access_configure_command();
     is($configure_command,
-       "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none",
+       "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$release_dir -Dman1dir=none -Dman3dir=none",
         "Got default configure command"
     );
-    $alt = "sh ./Configure -des -Dusedevel -Dprefix=$self->get_release_dir -Uversiononly -Dman1dir=none -Dman3dir=none";
+    $alt = "sh ./Configure -des -Dusedevel -Dprefix=$release_dir -Uversiononly -Dman1dir=none -Dman3dir=none";
     $configure_command = $self->access_configure_command($alt);
     is($configure_command, $alt, "Got user-specified configure command");
 
