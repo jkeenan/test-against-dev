@@ -60,19 +60,6 @@ sub get_results_dir {
     return $self->{results_dir};
 }
 
-=pod
-
-VTESTINGDIR="$TESTINGDIR/$RELEASE"
-CPANMDIR="$VTESTINGDIR/.cpanm"
-CPANREPORTERDIR="$VTESTINGDIR/.cpanreporter"
-    --host=ftp.funet.fi \
-    --hostdir=/pub/languages/perl/CPAN/src/5.0 \
-    --release=$TARBALL \
-    --localpath=/home/jkeenan/var/bbc \
-    --verbose \
-
-=cut
-
 sub perform_tarball_download {
     my ($self, $args) = @_;
     croak "perform_tarball_download: Must supply hash ref as argument"
@@ -80,7 +67,7 @@ sub perform_tarball_download {
     my $verbose = delete $args->{verbose} || '';
     my $mock = delete $args->{mock} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
-        host hostdir release compression
+        host hostdir release compression workdir
     | );
     for my $k (keys %$args) {
         croak "perform_tarball_download: '$k' is not a valid element"
@@ -92,6 +79,9 @@ sub perform_tarball_download {
     my %eligible_compressions = map { $_ => 1 } ( qw| gz bz2 xz | );
     croak "perform_tarball_download: '$args->{compression}' is not a valid compression format"
         unless $eligible_compressions{$args->{compression}};
+
+    croak "Could not locate '$args->{workdir}' for purpose of downloading tarball and building perl"
+        if (exists $args->{workdir} and (! -d $args->{workdir}));
 
     $self->{$_} = $args->{$_} for keys %$args;
 

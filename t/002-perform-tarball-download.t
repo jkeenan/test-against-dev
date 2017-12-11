@@ -71,6 +71,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     like($@, qr/perform_tarball_download: '$bad_release' does not conform to pattern/,
         "perform_tarball_download: Got expected error message for invalid release");
 }
+
 {
     local $@;
     my $bad_compression = 'foo';
@@ -87,6 +88,24 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     like($@, qr/perform_tarball_download: '$bad_compression' is not a valid compression format/,
         "perform_tarball_download: Got expected error message for invalid compression format");
 }
+
+{
+    local $@;
+    my $bad_workdir = '/foo/bar/baz';
+    eval {
+        my $rv = $self->perform_tarball_download( {
+            host                => $host,
+            hostdir             => $hostdir,
+            release             => 'perl-5.27.1',
+            compression         => 'gz',
+            workdir             => $bad_workdir,
+            mock                => 1,
+      } );
+    };
+    like($@, qr/Could not locate '$bad_workdir' for purpose of downloading tarball and building perl/,
+        "perform_tarball_download: Got expected error message for workdir not located");
+}
+
 
 SKIP: {
     skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 17
