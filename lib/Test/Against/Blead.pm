@@ -173,13 +173,28 @@ sub configure_build_install_perl {
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
 
+    # What I want in terms of verbose output:
+    # 0: No verbose output from Test::Against::Blead
+    #    Minimal output from tar, Configure, make
+    #    (tar xzf; Configure, make 1>/dev/null
+    # 1: Verbose output from Test::Against::Blead
+    #    Minimal output from tar, Configure, make
+    #    (tar xzf; Configure, make 1>/dev/null
+    # 2: Verbose output from Test::Against::Blead
+    #    Verbose output from tar ('v')
+    #    Regular output from Configure, make
+
     # Use default configure and make install commands unless an argument has
     # been passed.
-    $self->access_configure_command($args->{configure_command} || '');
-    $self->access_make_install_command($args->{make_install_command} || '');
+    my $acc = $self->access_configure_command($args->{configure_command} || '');
+    my $mic = $self->access_make_install_command($args->{make_install_command} || '');
+    unless ($verbose > 1) {
+        $self->access_configure_command($acc . " 1>/dev/null");
+        $self->access_make_install_command($mic . " 1>/dev/null");
+    }
 
     chdir $self->{workdir} or croak "Unable to change to $self->{workdir}";
-    my $untar_command = ($verbose) ? 'tar xzvf' : 'tar xzf';
+    my $untar_command = ($verbose > 1) ? 'tar xzvf' : 'tar xzf';
     system(qq|$untar_command $self->{tarball_path}|)
         and croak "Unable to untar $self->{tarball_path}";
     say "Tarball has been untarred into ", File::Spec->catdir($self->{workdir}, $self->{release})
