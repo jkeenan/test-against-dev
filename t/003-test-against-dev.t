@@ -22,7 +22,7 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip 'Live FTP download', 8
+    skip 'Live FTP download', 9
         unless $ENV{PERL_ALLOW_NETWORK_TESTING} and $ENV{PERL_AUTHOR_TESTING};
 
     my ($stdout, $stderr);
@@ -52,6 +52,8 @@ SKIP: {
 
     my $this_perl = $self->configure_build_install_perl({ verbose => 1 });
     ok(-f $this_perl, "Installed $this_perl");
+    my $this_cpanm = $self->fetch_cpanm( { verbose => 1 } );
+    ok(-f $this_cpanm, "Installed $this_cpanm");
 }
 
 done_testing();

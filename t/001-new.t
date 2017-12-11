@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 use File::Temp ( qw| tempdir |);
 #use Data::Dump ( qw| dd pp | );
 
@@ -50,3 +50,5 @@ ok(-d $self->get_src_dir, "Got src directory");
 ok(-d $self->get_testing_dir, "Got testing directory");
 ok(-d $self->get_results_dir, "Got results directory");
 
+can_ok('Test::Against::Blead', 'configure_build_install_perl');
+can_ok('Test::Against::Blead', 'fetch_cpanm');

@@ -12,6 +12,7 @@ WriteMakefile(
                     'Carp'                              => 0,
                     'CPAN::cpanminus::reporter::RetainReports' => 0.04,
                     'Data::Dump'                        => 0,
+                    'File::Fetch'                       => 0,
                     'File::Path'                        => 2.15,
                     'File::Spec'                        => 0,
                     'File::Temp'                       => 0,

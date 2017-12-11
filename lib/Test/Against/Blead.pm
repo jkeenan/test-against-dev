@@ -4,6 +4,7 @@ use 5.10.1;
 our $VERSION = '0.01';
 use Carp;
 use Cwd;
+use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir | );
@@ -214,11 +215,47 @@ sub configure_build_install_perl {
     croak "Could not locate '$bindir'" unless (-d $bindir);
     croak "Could not locate '$libdir'" unless (-d $libdir);
     croak "Could not locate '$this_perl'" unless (-f $this_perl);
+    $self->{bindir} = $bindir;
+    $self->{libdir} = $libdir;
+    $self->{this_perl} = $this_perl;
     chdir $cwd or croak "Unable to change back to $cwd";
     if ($self->{restore_to_dir}) {
         chdir $self->{restore_to_dir} or croak "Unable to change back to $self->{restore_to_dir}";
     }
     return $this_perl;
+}
+
+sub fetch_cpanm {
+    my ($self, $args) = @_;
+    $args //= {};
+    croak "perform_tarball_download: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    my $uri = (exists $args->{uri} and length $args->{uri})
+        ? $args->{uri}
+        : 'http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.7043/bin/cpanm';
+
+    say "Fetching 'cpanm' from $uri" if $verbose;
+    my $ff = File::Fetch->new(uri => $uri);
+    my ($scalar, $where);
+    $where = $ff->fetch( to => \$scalar );
+    croak "Did not download 'cpanm'" unless (-f $where);
+    open my $IN, '<', \$scalar or croak "Unable to open scalar for reading";
+    my $this_cpanm = File::Spec->catfile($self->{bindir}, 'cpanm');
+    open my $OUT, '>', $this_cpanm or croak "Unable to open $this_cpanm for writing";
+    while (<$IN>) {
+        chomp $_;
+        say $OUT $_;
+    }
+    close $OUT or croak "Unalbe to close $this_cpanm after writing";
+    close $IN or croak "Unable to close scalar after reading";
+    unless (-f $this_cpanm) {
+        croak "Unable to locate '$this_cpanm'";
+    }
+    else {
+        say "Installed '$this_cpanm'";
+        $self->{this_cpanm} = $this_cpanm;
+    }
 }
 
 1;
