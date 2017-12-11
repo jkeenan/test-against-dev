@@ -146,6 +146,18 @@ sub access_configure_command {
     }
     $self->{configure_command} = $cmd;
 }
-    
+
+sub access_make_install_command {
+    my ($self, $arg) = @_;
+    my $cmd;
+    if (length $arg) {
+        $cmd = $arg;
+    }
+    else {
+        $cmd = "make install"
+    }
+    $self->{make_install_command} = $cmd;
+}
+
 1;
 

@@ -89,7 +89,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 }
 
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 15 
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 17
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
     my ($rv, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
 
@@ -118,6 +118,12 @@ SKIP: {
     $alt = "sh ./Configure -des -Dusedevel -Dprefix=$self->get_release_dir -Uversiononly -Dman1dir=none -Dman3dir=none";
     $configure_command = $self->access_configure_command($alt);
     is($configure_command, $alt, "Got user-specified configure command");
+
+    $make_install_command = $self->access_make_install_command();
+    is($make_install_command, 'make install', "Got default make install command");
+    $alt = 'make -j4 install';
+    $make_install_command = $self->access_make_install_command($alt);
+    is($make_install_command, $alt, "Got user specified make install command");
 
     $stdout = capture_stdout {
         $rv = $self->perform_tarball_download( {
