@@ -31,7 +31,7 @@ sub new {
         $data->{$k} = $args->{$k};
     }
 
-    for my $dir (qw| src testing results |) {
+    for my $dir (qw| testing results |) {
         my $fdir = File::Spec->catdir($data->{application_dir}, $dir);
         unless (-d $fdir) { make_path($fdir, { mode => 0755 }); }
         croak "Could not locate $fdir" unless (-d $fdir);
@@ -45,11 +45,6 @@ sub new {
 sub get_application_dir {
     my $self = shift;
     return $self->{application_dir};
-}
-
-sub get_src_dir {
-    my $self = shift;
-    return $self->{src_dir};
 }
 
 sub get_testing_dir {
@@ -339,7 +334,6 @@ sub run_cpanm {
     unless (-d $self->{vresults_dir}) {
         $self->setup_results_directories();
     }
-
 
     return 1;
 }
