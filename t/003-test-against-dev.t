@@ -2,6 +2,7 @@
 # t/003-test-against-dev.t - download and install a perl, a cpanm
 use strict;
 use warnings;
+use feature 'say';
 
 use Test::More;
 use Carp;
@@ -24,7 +25,7 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip 'Live FTP download', 14
+    skip 'Live FTP download', 15
         unless $ENV{PERL_ALLOW_NETWORK_TESTING} and $ENV{PERL_AUTHOR_TESTING};
 
     my ($stdout, $stderr);
@@ -67,6 +68,9 @@ SKIP: {
         and croak "Unable to use 'cpanm' to install module List::Compare";
     my $hw = `$this_perl -I$self->{libdir} -MList::Compare -e 'print q|hello world|;'`;
     is($hw, 'hello world', "Got 'hello world' when -MList::Compare");
+    my $lcv = qx|$this_perl -I$libdir -MList::Compare -E 'say \$List::Compare::VERSION;'|;
+    chomp($lcv);
+    like($lcv, qr/^\d\.\d\d$/, "Got \$List::Compare::VERSION $lcv");
 }
 
 done_testing();

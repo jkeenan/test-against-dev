@@ -4,5 +4,5 @@ TODO list for Perl module Test::Against::Blead
 Extend it to 'bz2' and xz'.
 
 Figure out why I couldn't get ... -MList::Compare -e 'print $List::Compare::VERSION' 
-to work.
+to work.  DONE: 2017-12-11 22:01
 
