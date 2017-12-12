@@ -35,7 +35,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( [
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.1',
+            perl_release        => 'perl-5.27.1',
             compression         => 'gz',
             verbose             => 0,
             mock                => 1,
@@ -52,7 +52,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.1',
+            perl_release        => 'perl-5.27.1',
             compression         => 'gz',
             verbose             => 0,
             mock                => 1,
@@ -65,19 +65,19 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 {
     local $@;
-    my $bad_release = '5.27.1';
+    my $bad_perl_release = '5.27.1';
     eval {
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => $bad_release,
+            perl_release        => $bad_perl_release,
             compression         => 'gz',
             verbose             => 0,
             mock                => 1,
       } );
     };
-    like($@, qr/perform_tarball_download: '$bad_release' does not conform to pattern/,
-        "perform_tarball_download: Got expected error message for invalid release");
+    like($@, qr/perform_tarball_download: '$bad_perl_release' does not conform to pattern/,
+        "perform_tarball_download: Got expected error message for invalid perl_release");
 }
 
 {
@@ -87,7 +87,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.1',
+            perl_release        => 'perl-5.27.1',
             compression         => $bad_compression,
             verbose             => 0,
             mock                => 1,
@@ -104,9 +104,9 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.1',
+            perl_release        => 'perl-5.27.1',
             compression         => 'gz',
-            work_dir             => $bad_work_dir,
+            work_dir            => $bad_work_dir,
             mock                => 1,
       } );
     };
@@ -129,7 +129,7 @@ SKIP: {
     ($tarball_path, $work_dir) = $self->perform_tarball_download( {
         host                => $host,
         hostdir             => $hostdir,
-        release             => 'perl-5.27.1',
+        perl_release        => 'perl-5.27.1',
         compression         => 'gz',
         verbose             => 0,
         mock                => 1,
@@ -160,7 +160,7 @@ SKIP: {
         ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.2',
+            perl_release        => 'perl-5.27.2',
             compression         => 'xz',
             verbose             => 1,
             mock                => 1,
@@ -178,7 +178,7 @@ SKIP: {
             ($tarball_path, $work_dir) = $self->perform_tarball_download( {
                 host                => $host,
                 hostdir             => $hostdir,
-                release             => 'perl-5.27.2',
+                perl_release        => 'perl-5.27.2',
                 compression         => 'xz',
                 verbose             => 1,
                 mock                => 0,
@@ -199,7 +199,7 @@ SKIP: {
         ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.3',
+            perl_release        => 'perl-5.27.3',
             compression         => 'xz',
         } );
         ok($tarball_path, 'perform_tarball_download: returned true value');

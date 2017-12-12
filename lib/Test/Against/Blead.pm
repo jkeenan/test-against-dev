@@ -69,14 +69,14 @@ sub perform_tarball_download {
     my $verbose = delete $args->{verbose} || '';
     my $mock = delete $args->{mock} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
-        host hostdir release compression work_dir
+        host hostdir perl_release compression work_dir
     | );
     for my $k (keys %$args) {
         croak "perform_tarball_download: '$k' is not a valid element"
             unless $eligible_args{$k};
     }
-    croak "perform_tarball_download: '$args->{release}' does not conform to pattern"
-        unless $args->{release} =~ m/$self->{perl_version_pattern}/;
+    croak "perform_tarball_download: '$args->{perl_release}' does not conform to pattern"
+        unless $args->{perl_release} =~ m/$self->{perl_version_pattern}/;
 
     my %eligible_compressions = map { $_ => 1 } ( qw| gz bz2 xz | );
     croak "perform_tarball_download: '$args->{compression}' is not a valid compression format"
@@ -87,9 +87,9 @@ sub perform_tarball_download {
 
     $self->{$_} = $args->{$_} for keys %$args;
 
-    $self->{tarball} = "$self->{release}.tar.$self->{compression}";
+    $self->{tarball} = "$self->{perl_release}.tar.$self->{compression}";
 
-    my $this_release_dir = File::Spec->catdir($self->get_testing_dir(), $self->{release});
+    my $this_release_dir = File::Spec->catdir($self->get_testing_dir(), $self->{perl_release});
     unless (-d $this_release_dir) { make_path($this_release_dir, { mode => 0755 }); }
     croak "Could not locate $this_release_dir" unless (-d $this_release_dir);
     $self->{release_dir} = $this_release_dir;
@@ -197,9 +197,9 @@ sub configure_build_install_perl {
     my $untar_command = ($verbose > 1) ? 'tar xzvf' : 'tar xzf';
     system(qq|$untar_command $self->{tarball_path}|)
         and croak "Unable to untar $self->{tarball_path}";
-    say "Tarball has been untarred into ", File::Spec->catdir($self->{work_dir}, $self->{release})
+    say "Tarball has been untarred into ", File::Spec->catdir($self->{work_dir}, $self->{perl_release})
         if $verbose;
-    my $build_dir = $self->{release};
+    my $build_dir = $self->{perl_release};
     chdir $build_dir or croak "Unable to change to $build_dir";
     say "Configuring perl with '$self->{configure_command}'" if $verbose;
     system(qq|$self->{configure_command}|)
@@ -296,8 +296,8 @@ sub get_cpanm_dir {
 
 sub setup_results_directories {
     my $self = shift;
-    croak "Perl release not yet defined" unless $self->{release};
-    my $vresultsdir = File::Spec->catdir($self->get_results_dir, $self->{release});
+    croak "Perl release not yet defined" unless $self->{perl_release};
+    my $vresultsdir = File::Spec->catdir($self->get_results_dir, $self->{perl_release});
     my $buildlogsdir = File::Spec->catdir($vresultsdir, 'buildlogs');
     my $analysisdir = File::Spec->catdir($vresultsdir, 'analysis');
     my $storagedir = File::Spec->catdir($vresultsdir, 'storage');

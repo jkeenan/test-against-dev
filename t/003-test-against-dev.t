@@ -35,7 +35,7 @@ SKIP: {
         ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
-            release             => 'perl-5.27.6',
+            perl_release        => 'perl-5.27.6',
             compression         => 'gz',
             verbose             => 1,
             mock                => 0,
