@@ -146,7 +146,6 @@ sub access_configure_command {
         $cmd = $arg;
     }
     else {
-        #$cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$self->get_release_dir -Dman1dir=none -Dman3dir=none"
         $cmd = "sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=";
         $cmd .= $self->get_release_dir;
         $cmd .= " -Dman1dir=none -Dman3dir=none";
@@ -225,6 +224,26 @@ sub configure_build_install_perl {
     return $this_perl;
 }
 
+sub get_bindir {
+    my $self = shift;
+    if (! defined $self->{bindir}) {
+        croak "bin directory has not yet been defined; run configure_build_install_perl()";
+    }
+    else {
+        return $self->{bindir};
+    }
+}
+
+sub get_libdir {
+    my $self = shift;
+    if (! defined $self->{libdir}) {
+        croak "lib directory has not yet been defined; run configure_build_install_perl()";
+    }
+    else {
+        return $self->{libdir};
+    }
+}
+
 sub fetch_cpanm {
     my ($self, $args) = @_;
     $args //= {};
@@ -234,6 +253,11 @@ sub fetch_cpanm {
     my $uri = (exists $args->{uri} and length $args->{uri})
         ? $args->{uri}
         : 'http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.7043/bin/cpanm';
+
+    my $cpanm_dir = File::Spec->catdir($self->get_release_dir(), '.cpanm');
+    unless (-d $cpanm_dir) { make_path($cpanm_dir, { mode => 0755 }); }
+    croak "Could not locate $cpanm_dir" unless (-d $cpanm_dir);
+    $self->{cpanm_dir} = $cpanm_dir;
 
     say "Fetching 'cpanm' from $uri" if $verbose;
     my $ff = File::Fetch->new(uri => $uri);
@@ -254,7 +278,19 @@ sub fetch_cpanm {
     }
     else {
         say "Installed '$this_cpanm'";
-        $self->{this_cpanm} = $this_cpanm;
+    }
+    my $cnt = chmod 0755, $this_cpanm;
+    croak "Unable to make '$this_cpanm' executable" unless $cnt;
+    $self->{this_cpanm} = $this_cpanm;
+}
+
+sub get_cpanm_dir {
+    my $self = shift;
+    if (! defined $self->{cpanm_dir}) {
+        croak "cpanm directory has not yet been defined; run fetch_cpanm()";
+    }
+    else {
+        return $self->{cpanm_dir};
     }
 }
 

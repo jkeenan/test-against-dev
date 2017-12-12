@@ -3,3 +3,6 @@ TODO list for Perl module Test::Against::Blead
 2017-12-11: configure_build_install_perl() currently only supports 'gz' decompression.
 Extend it to 'bz2' and xz'.
 
+Figure out why I couldn't get ... -MList::Compare -e 'print $List::Compare::VERSION' 
+to work.
+

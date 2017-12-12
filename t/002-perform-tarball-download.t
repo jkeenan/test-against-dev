@@ -1,5 +1,5 @@
 # -*- perl -*-
-# t/001-load.t - check module loading and create testing directory
+# t/002-perform-tarball-download.t - check module loading and create testing directory
 use strict;
 use warnings;
 
@@ -108,7 +108,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 
 SKIP: {
-    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 21
+    skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 23
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
     my ($tarball_path, $workdir, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
 
@@ -160,7 +160,7 @@ SKIP: {
     ok(-d $release_dir, "Located release dir: $release_dir");
 
     SKIP: {
-        skip 'Live FTP download', 11 unless $ENV{PERL_AUTHOR_TESTING};
+        skip 'Live FTP download', 13 unless $ENV{PERL_AUTHOR_TESTING};
         note("Performing live FTP download of Perl tarball;\n  this may take a while.");
         $stdout = capture_stdout {
             ($tarball_path, $workdir) = $self->perform_tarball_download( {
@@ -196,6 +196,30 @@ SKIP: {
         ok(-f $tarball_path, "Downloaded tarball: $tarball_path");
         ok(-d $workdir, "Located work directory: $workdir");
     }
+
+    {
+        local $@;
+        my $bindir;
+        eval { $bindir = $self->get_bindir(); };
+        like($@, qr/bin directory has not yet been defined; run configure_build_install_perl\(\)/,
+            "get_bindir: Got expected error message for premature call");
+    };
+
+    {
+        local $@;
+        my $libdir;
+        eval { $libdir = $self->get_libdir(); };
+        like($@, qr/lib directory has not yet been defined; run configure_build_install_perl\(\)/,
+            "get_libdir: Got expected error message for premature call");
+    };
+
+    {
+        local $@;
+        my $cpanm_dir;
+        eval { $cpanm_dir = $self->get_cpanm_dir(); };
+        like($@, qr/cpanm directory has not yet been defined; run fetch_cpanm\(\)/,
+            "get_cpanm_dir: Got expected error message for premature call");
+    };
 }
 
 done_testing();
