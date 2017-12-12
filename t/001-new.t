@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More;
 use File::Temp ( qw| tempdir |);
 #use Data::Dump ( qw| dd pp | );
 
@@ -56,10 +56,4 @@ ok(-d $results_dir, "Got results directory: $results_dir");
 can_ok('Test::Against::Blead', 'configure_build_install_perl');
 can_ok('Test::Against::Blead', 'fetch_cpanm');
 
-{
-    local $@;
-    my $count;
-    eval { $count = $self->setup_results_directories(); };
-    like($@, qr/Perl release not yet defined/,
-        "Got expected error message: premature attempt to set up results directory tree");
-}
+done_testing();

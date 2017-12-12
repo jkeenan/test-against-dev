@@ -23,6 +23,14 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 {
     local $@;
+    my $count;
+    eval { $count = $self->setup_results_directories(); };
+    like($@, qr/Perl release not yet defined/,
+        "Got expected error message: premature attempt to set up results directory tree");
+}
+
+{
+    local $@;
     eval {
         my ($tarball_path, $work_dir) = $self->perform_tarball_download( [
             host                => $host,
