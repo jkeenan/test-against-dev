@@ -297,17 +297,52 @@ sub get_cpanm_dir {
 sub setup_results_directories {
     my $self = shift;
     croak "Perl release not yet defined" unless $self->{perl_release};
-    my $vresultsdir = File::Spec->catdir($self->get_results_dir, $self->{perl_release});
-    my $buildlogsdir = File::Spec->catdir($vresultsdir, 'buildlogs');
-    my $analysisdir = File::Spec->catdir($vresultsdir, 'analysis');
-    my $storagedir = File::Spec->catdir($vresultsdir, 'storage');
-    my @created = make_path( $vresultsdir, $buildlogsdir, $analysisdir, $storagedir,
+    my $vresults_dir = File::Spec->catdir($self->get_results_dir, $self->{perl_release});
+    my $buildlogs_dir = File::Spec->catdir($vresults_dir, 'buildlogs');
+    my $analysis_dir = File::Spec->catdir($vresults_dir, 'analysis');
+    my $storage_dir = File::Spec->catdir($vresults_dir, 'storage');
+    my @created = make_path( $vresults_dir, $buildlogs_dir, $analysis_dir, $storage_dir,
         { mode => 0755 });
     for my $dir (@created) { croak "$dir not found" unless -d $dir; }
+    $self->{vresults_dir} = $vresults_dir;
+    $self->{buildlogs_dir} = $buildlogs_dir;
+    $self->{analysis_dir} = $analysis_dir;
+    $self->{storage_dir} = $storage_dir;
     return scalar(@created);
 }
 
+sub run_cpanm {
+    my ($self, $args) = @_;
+    $args //= {};
+    croak "run_cpanm: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    my %eligible_args = map { $_ => 1 } ( qw|
+        module_file module_list
+    | );
+    for my $k (keys %$args) {
+        croak "run_cpanm: '$k' is not a valid element"
+            unless $eligible_args{$k};
+    }
+    if (exists $args->{module_file} and exists $args->{module_list}) {
+        croak "run_cpanm: Supply either a file for 'module_file' or an array ref for 'module_list' but not both";
+    }
+    if ($args->{module_file}) {
+        croak "run_cpanm: Could not locate '$args->{module_file}'"
+            unless (-f $args->{module_file});
+    }
+    if ($args->{module_list}) {
+        croak "run_cpanm: Must supply array ref for 'module_list'"
+            unless ref($args->{module_list}) eq 'HASH';
+    }
 
+    unless (-d $self->{vresults_dir}) {
+        $self->setup_results_directories();
+    }
+
+
+    return 1;
+}
 
 
 1;

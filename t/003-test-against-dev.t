@@ -25,7 +25,7 @@ my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 SKIP: {
-    skip 'Live FTP download', 15
+    skip 'Live FTP download', 20
         unless $ENV{PERL_ALLOW_NETWORK_TESTING} and $ENV{PERL_AUTHOR_TESTING};
 
     my ($stdout, $stderr);
@@ -71,6 +71,47 @@ SKIP: {
     my $lcv = qx|$this_perl -I$lib_dir -MList::Compare -E 'say \$List::Compare::VERSION;'|;
     chomp($lcv);
     like($lcv, qr/^\d\.\d\d$/, "Got \$List::Compare::VERSION $lcv");
+
+    {
+        local $@;
+        eval { $self->run_cpanm( [ module_file => 'foo' ] ); };
+        like($@, qr/run_cpanm: Must supply hash ref as argument/,
+            "Got expected error message: absence of hashref");
+    }
+
+    {
+        local $@;
+        my $bad_element = 'foo';
+        eval { $self->run_cpanm( { $bad_element => 'bar' } ); };
+        like($@, qr/run_cpanm: '$bad_element' is not a valid element/,
+            "Got expected error message: bad argument");
+    }
+
+    {
+        local $@;
+        eval { $self->run_cpanm( {
+            module_file => 'foo',
+            module_list => [ 'Foo::Bar', 'Alpha::Beta' ],
+        } ); };
+        like($@, qr/run_cpanm: Supply either a file for 'module_file' or an array ref for 'module_list' but not both/,
+            "Got expected error message: bad mixture of arguments");
+    }
+
+    {
+        local $@;
+        my $bad_module_file = 'foo';
+        eval { $self->run_cpanm( { module_file => $bad_module_file } ); };
+        like($@, qr/run_cpanm: Could not locate '$bad_module_file'/,
+            "Got expected error message: module_file not found");
+    }
+
+    {
+        local $@;
+        eval { $self->run_cpanm( { module_list => "Foo::Bar" } ); };
+        like($@, qr/run_cpanm: Must supply array ref for 'module_list'/,
+            "Got expected error message: value for module_list not an array ref");
+    }
+
     pp({ %{$self} });
     note("Status");
 }
