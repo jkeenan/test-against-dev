@@ -38,7 +38,7 @@ sub new {
         $data->{"${dir}_dir"} = $fdir;
     }
 
-    $data->{perl_release_pattern} = qr/^perl-5\.\d+\.\d{1,2}$/;
+    $data->{perl_version_pattern} = qr/^perl-5\.\d+\.\d{1,2}$/;
     return bless $data, $class;
 }
 
@@ -76,7 +76,7 @@ sub perform_tarball_download {
             unless $eligible_args{$k};
     }
     croak "perform_tarball_download: '$args->{release}' does not conform to pattern"
-        unless $args->{release} =~ m/$self->{perl_release_pattern}/;
+        unless $args->{release} =~ m/$self->{perl_version_pattern}/;
 
     my %eligible_compressions = map { $_ => 1 } ( qw| gz bz2 xz | );
     croak "perform_tarball_download: '$args->{compression}' is not a valid compression format"
