@@ -294,5 +294,21 @@ sub get_cpanm_dir {
     }
 }
 
+sub setup_results_directories {
+    my $self = shift;
+    croak "Perl release not yet defined" unless $self->{release};
+    my $vresultsdir = File::Spec->catdir($self->get_results_dir, $self->{release});
+    my $buildlogsdir = File::Spec->catdir($vresultsdir, 'buildlogs');
+    my $analysisdir = File::Spec->catdir($vresultsdir, 'analysis');
+    my $storagedir = File::Spec->catdir($vresultsdir, 'storage');
+    my @created = make_path( $vresultsdir, $buildlogsdir, $analysisdir, $storagedir,
+        { mode => 0755 });
+    for my $dir (@created) { croak "$dir not found" unless -d $dir; }
+    return scalar(@created);
+}
+
+
+
+
 1;
 

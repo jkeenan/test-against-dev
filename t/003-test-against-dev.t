@@ -12,8 +12,8 @@ use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Test::RequiresInternet ('ftp.funet.fi' => 21);
 BEGIN { use_ok( 'Test::Against::Blead' ); }
 
-my $tdir = tempdir(CLEANUP => 1);
-#my $tdir = '/home/jkeenan/tmp/special';
+#my $tdir = tempdir(CLEANUP => 1);
+my $tdir = '/home/jkeenan/tmp/special';
 my $self;
 
 $self = Test::Against::Blead->new( {
@@ -71,6 +71,8 @@ SKIP: {
     my $lcv = qx|$this_perl -I$libdir -MList::Compare -E 'say \$List::Compare::VERSION;'|;
     chomp($lcv);
     like($lcv, qr/^\d\.\d\d$/, "Got \$List::Compare::VERSION $lcv");
+    pp({ %{$self} });
+    note("Status");
 }
 
 done_testing();

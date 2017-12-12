@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 15;
 use File::Temp ( qw| tempdir |);
 #use Data::Dump ( qw| dd pp | );
 
@@ -46,9 +46,20 @@ for my $dir ( qw| src testing results | ) {
     my $fdir = File::Spec->catdir($top_dir, $dir);
     ok(-d $fdir, "Located $fdir");
 }
-ok(-d $self->get_src_dir, "Got src directory");
-ok(-d $self->get_testing_dir, "Got testing directory");
-ok(-d $self->get_results_dir, "Got results directory");
+my $src_dir = $self->get_src_dir;
+my $testing_dir = $self->get_testing_dir;
+my $results_dir = $self->get_results_dir;
+ok(-d $src_dir, "Got src directory: $src_dir");
+ok(-d $testing_dir, "Got testing directory: $testing_dir");
+ok(-d $results_dir, "Got results directory: $results_dir");
 
 can_ok('Test::Against::Blead', 'configure_build_install_perl');
 can_ok('Test::Against::Blead', 'fetch_cpanm');
+
+{
+    local $@;
+    my $count;
+    eval { $count = $self->setup_results_directories(); };
+    like($@, qr/Perl release not yet defined/,
+        "Got expected error message: premature attempt to set up results directory tree");
+}
