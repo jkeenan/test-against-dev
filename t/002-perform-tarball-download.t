@@ -24,7 +24,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 {
     local $@;
     eval {
-        my ($tarball_path, $workdir) = $self->perform_tarball_download( [
+        my ($tarball_path, $work_dir) = $self->perform_tarball_download( [
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -41,7 +41,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_key = 'foo';
     eval {
-        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -59,7 +59,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_release = '5.27.1';
     eval {
-        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => $bad_release,
@@ -76,7 +76,7 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
     local $@;
     my $bad_compression = 'foo';
     eval {
-        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
@@ -91,26 +91,26 @@ my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
 
 {
     local $@;
-    my $bad_workdir = '/foo/bar/baz';
+    my $bad_work_dir = '/foo/bar/baz';
     eval {
-        my ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.1',
             compression         => 'gz',
-            workdir             => $bad_workdir,
+            work_dir             => $bad_work_dir,
             mock                => 1,
       } );
     };
-    like($@, qr/Could not locate '$bad_workdir' for purpose of downloading tarball and building perl/,
-        "perform_tarball_download: Got expected error message for workdir not located");
+    like($@, qr/Could not locate '$bad_work_dir' for purpose of downloading tarball and building perl/,
+        "perform_tarball_download: Got expected error message for work_dir not located");
 }
 
 
 SKIP: {
     skip "Set PERL_ALLOW_NETWORK_TESTING to conduct live tests", 24
         unless $ENV{PERL_ALLOW_NETWORK_TESTING};
-    my ($tarball_path, $workdir, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
+    my ($tarball_path, $work_dir, $stdout, $release_dir, $configure_command, $alt, $make_install_command);
 
     {
         local $@;
@@ -118,7 +118,7 @@ SKIP: {
         like($@, qr/release directory has not yet been defined; run perform_tarball_download\(\)/,
             "get_release_dir: Got expected error message for premature call");
     };
-    ($tarball_path, $workdir) = $self->perform_tarball_download( {
+    ($tarball_path, $work_dir) = $self->perform_tarball_download( {
         host                => $host,
         hostdir             => $hostdir,
         release             => 'perl-5.27.1',
@@ -149,7 +149,7 @@ SKIP: {
     is($make_install_command, $alt, "Got user specified make install command");
 
     $stdout = capture_stdout {
-        ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.2',
@@ -167,7 +167,7 @@ SKIP: {
         skip 'Live FTP download', 13 unless $ENV{PERL_AUTHOR_TESTING};
         note("Performing live FTP download of Perl tarball;\n  this may take a while.");
         $stdout = capture_stdout {
-            ($tarball_path, $workdir) = $self->perform_tarball_download( {
+            ($tarball_path, $work_dir) = $self->perform_tarball_download( {
                 host                => $host,
                 hostdir             => $hostdir,
                 release             => 'perl-5.27.2',
@@ -180,15 +180,15 @@ SKIP: {
         $release_dir = $self->get_release_dir();
         ok(-d $release_dir, "Located release dir: $release_dir");
         ok(-f $tarball_path, "Downloaded tarball: $tarball_path");
-        ok(-d $workdir, "Located work directory: $workdir");
+        ok(-d $work_dir, "Located work directory: $work_dir");
         like($stdout, qr/Beginning FTP download/s,
             "Got expected verbose output: starting download");
-        like($stdout, qr/Perl configure-build-install cycle will be performed in $workdir/s,
+        like($stdout, qr/Perl configure-build-install cycle will be performed in $work_dir/s,
             "Got expected verbose output: cycle location");
         like($stdout, qr/Path to tarball is $tarball_path/s,
             "Got expected verbose output: tarball path");
 
-        ($tarball_path, $workdir) = $self->perform_tarball_download( {
+        ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             host                => $host,
             hostdir             => $hostdir,
             release             => 'perl-5.27.3',
@@ -198,23 +198,23 @@ SKIP: {
         $release_dir = $self->get_release_dir();
         ok(-d $release_dir, "Located release dir: $release_dir");
         ok(-f $tarball_path, "Downloaded tarball: $tarball_path");
-        ok(-d $workdir, "Located work directory: $workdir");
+        ok(-d $work_dir, "Located work directory: $work_dir");
     }
 
     {
         local $@;
-        my $bindir;
-        eval { $bindir = $self->get_bindir(); };
+        my $bin_dir;
+        eval { $bin_dir = $self->get_bin_dir(); };
         like($@, qr/bin directory has not yet been defined; run configure_build_install_perl\(\)/,
-            "get_bindir: Got expected error message for premature call");
+            "get_bin_dir: Got expected error message for premature call");
     };
 
     {
         local $@;
-        my $libdir;
-        eval { $libdir = $self->get_libdir(); };
+        my $lib_dir;
+        eval { $lib_dir = $self->get_lib_dir(); };
         like($@, qr/lib directory has not yet been defined; run configure_build_install_perl\(\)/,
-            "get_libdir: Got expected error message for premature call");
+            "get_lib_dir: Got expected error message for premature call");
     };
 
     {

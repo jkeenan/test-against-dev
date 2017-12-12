@@ -69,7 +69,7 @@ sub perform_tarball_download {
     my $verbose = delete $args->{verbose} || '';
     my $mock = delete $args->{mock} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
-        host hostdir release compression workdir
+        host hostdir release compression work_dir
     | );
     for my $k (keys %$args) {
         croak "perform_tarball_download: '$k' is not a valid element"
@@ -82,8 +82,8 @@ sub perform_tarball_download {
     croak "perform_tarball_download: '$args->{compression}' is not a valid compression format"
         unless $eligible_compressions{$args->{compression}};
 
-    croak "Could not locate '$args->{workdir}' for purpose of downloading tarball and building perl"
-        if (exists $args->{workdir} and (! -d $args->{workdir}));
+    croak "Could not locate '$args->{work_dir}' for purpose of downloading tarball and building perl"
+        if (exists $args->{work_dir} and (! -d $args->{work_dir}));
 
     $self->{$_} = $args->{$_} for keys %$args;
 
@@ -102,17 +102,17 @@ sub perform_tarball_download {
     } );
 
     unless ($mock) {
-        if (! $self->{workdir}) {
+        if (! $self->{work_dir}) {
             $self->{restore_to_dir} = cwd();
-            $self->{workdir} = tempdir(CLEANUP => 1);
+            $self->{work_dir} = tempdir(CLEANUP => 1);
         }
         if ($verbose) {
             say "Beginning FTP download (this will take a few minutes)";
-            say "Perl configure-build-install cycle will be performed in $self->{workdir}";
+            say "Perl configure-build-install cycle will be performed in $self->{work_dir}";
         }
         my $tarball_path = $ftpobj->get_specific_release( {
             release         => $self->{tarball},
-            path            => $self->{workdir},
+            path            => $self->{work_dir},
         } );
         unless (-f $tarball_path) {
             croak "Tarball $tarball_path not found: $!";
@@ -120,7 +120,7 @@ sub perform_tarball_download {
         else {
             say "Path to tarball is $tarball_path" if $verbose;
             $self->{tarball_path} = $tarball_path;
-            return ($tarball_path, $self->{workdir});
+            return ($tarball_path, $self->{work_dir});
         }
     }
     else {
@@ -193,11 +193,11 @@ sub configure_build_install_perl {
         $self->access_make_install_command($mic . " 1>/dev/null");
     }
 
-    chdir $self->{workdir} or croak "Unable to change to $self->{workdir}";
+    chdir $self->{work_dir} or croak "Unable to change to $self->{work_dir}";
     my $untar_command = ($verbose > 1) ? 'tar xzvf' : 'tar xzf';
     system(qq|$untar_command $self->{tarball_path}|)
         and croak "Unable to untar $self->{tarball_path}";
-    say "Tarball has been untarred into ", File::Spec->catdir($self->{workdir}, $self->{release})
+    say "Tarball has been untarred into ", File::Spec->catdir($self->{work_dir}, $self->{release})
         if $verbose;
     my $build_dir = $self->{release};
     chdir $build_dir or croak "Unable to change to $build_dir";
@@ -208,14 +208,14 @@ sub configure_build_install_perl {
     system(qq|$self->{make_install_command}|)
         and croak "Unable to build and install with '$self->{make_install_command}'";
     my $rdir = $self->get_release_dir();
-    my $bindir = File::Spec->catdir($rdir, 'bin');
-    my $libdir = File::Spec->catdir($rdir, 'lib');
-    my $this_perl = File::Spec->catfile($bindir, 'perl');
-    croak "Could not locate '$bindir'" unless (-d $bindir);
-    croak "Could not locate '$libdir'" unless (-d $libdir);
+    my $bin_dir = File::Spec->catdir($rdir, 'bin');
+    my $lib_dir = File::Spec->catdir($rdir, 'lib');
+    my $this_perl = File::Spec->catfile($bin_dir, 'perl');
+    croak "Could not locate '$bin_dir'" unless (-d $bin_dir);
+    croak "Could not locate '$lib_dir'" unless (-d $lib_dir);
     croak "Could not locate '$this_perl'" unless (-f $this_perl);
-    $self->{bindir} = $bindir;
-    $self->{libdir} = $libdir;
+    $self->{bin_dir} = $bin_dir;
+    $self->{lib_dir} = $lib_dir;
     $self->{this_perl} = $this_perl;
     chdir $cwd or croak "Unable to change back to $cwd";
     if ($self->{restore_to_dir}) {
@@ -224,23 +224,23 @@ sub configure_build_install_perl {
     return $this_perl;
 }
 
-sub get_bindir {
+sub get_bin_dir {
     my $self = shift;
-    if (! defined $self->{bindir}) {
+    if (! defined $self->{bin_dir}) {
         croak "bin directory has not yet been defined; run configure_build_install_perl()";
     }
     else {
-        return $self->{bindir};
+        return $self->{bin_dir};
     }
 }
 
-sub get_libdir {
+sub get_lib_dir {
     my $self = shift;
-    if (! defined $self->{libdir}) {
+    if (! defined $self->{lib_dir}) {
         croak "lib directory has not yet been defined; run configure_build_install_perl()";
     }
     else {
-        return $self->{libdir};
+        return $self->{lib_dir};
     }
 }
 
@@ -265,7 +265,7 @@ sub fetch_cpanm {
     $where = $ff->fetch( to => \$scalar );
     croak "Did not download 'cpanm'" unless (-f $where);
     open my $IN, '<', \$scalar or croak "Unable to open scalar for reading";
-    my $this_cpanm = File::Spec->catfile($self->{bindir}, 'cpanm');
+    my $this_cpanm = File::Spec->catfile($self->{bin_dir}, 'cpanm');
     open my $OUT, '>', $this_cpanm or croak "Unable to open $this_cpanm for writing";
     while (<$IN>) {
         chomp $_;
