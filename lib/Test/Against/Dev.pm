@@ -9,6 +9,7 @@ use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir | );
+use Path::Tiny;
 use Perl::Download::FTP;
 
 # What args must be passed to constructor?
@@ -372,16 +373,20 @@ sub run_cpanm {
     say "cpanm_dir: ", $self->get_cpanm_dir() if $verbose;
     local $ENV{PERL_CPANM_HOME} = $self->get_cpanm_dir();
 
+    my @modules = ();
     if ($args->{module_list}) {
-        my @list = @{$args->{module_list}};
-        my @cmd = (
-            $self->get_this_perl,
-            "-I$self->get_lib_dir",
-            $self->get_this_cpanm,
-            @list,
-        );
-        system(@cmd) and croak "Unable to install modules from list";
+        @modules = @{$args->{module_list}};
     }
+    elsif ($args->{module_file}) {
+        @modules = path($args->{module_file})->lines({ chomp => 1 });
+    }
+    my @cmd = (
+        $self->get_this_perl,
+        "-I$self->get_lib_dir",
+        $self->get_this_cpanm,
+        @modules,
+    );
+    system(@cmd) and croak "Unable to install modules from list";
 
     return 1;
 }

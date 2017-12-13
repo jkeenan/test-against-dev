@@ -16,7 +16,8 @@ WriteMakefile(
                     'File::Fetch'                       => 0,
                     'File::Path'                        => 2.15,
                     'File::Spec'                        => 0,
-                    'File::Temp'                       => 0,
+                    'File::Temp'                        => 0,
+                    'Path::Tiny'                        => 0,
                     'Perl::Download::FTP'               => 0.03,
     },
     ( $mm_ver < 6.63_03 ? 'BUILD_REQUIRES' : 'TEST_REQUIRES' ) =>  {

@@ -9,4 +9,5 @@ t/001-new.t
 t/002-perform-tarball-download.t
 t/003-test-against-dev.t
 t/004-new-from-existing.t
+t/data/two-modules.txt
 Todo

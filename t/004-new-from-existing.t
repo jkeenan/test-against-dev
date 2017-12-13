@@ -228,6 +228,22 @@ SKIP: {
         else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
     }
 
+    {
+        local $@;
+        my $file = catfile('t', 'data', 'two-modules.txt');
+        ok(-f $file, "Located $file for testing");
+        $self->run_cpanm( {
+            module_file => $file,
+            verbose     => 1,
+        } );
+        if ($@) {
+            fail("run_cpanm failed to install files listed in $file");
+        }
+        else {
+            pass("run_cpanm installed files listed in $file (or reported that they were already installed)");
+        }
+    }
+
 }
 
 done_testing();
