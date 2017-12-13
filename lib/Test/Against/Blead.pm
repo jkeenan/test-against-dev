@@ -345,8 +345,12 @@ sub new_from_existing_perl_cpanm {
     croak "new_from_existing_perl_cpanm: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
-    croak "Need 'path_to_perl' element in arguments hash ref"
-        unless exists $args->{path_to_perl};
+    #croak "Need 'path_to_perl' element in arguments hash ref"
+    #    unless exists $args->{path_to_perl};
+    for my $el ( qw| path_to_perl results_dir perl_version | ) {
+        croak "Need '$el' element in arguments hash ref"
+            unless exists $args->{$el};
+    }
     croak "Could not locate perl executable at '$args->{path_to_perl}'"
         unless (-x $args->{path_to_perl} and basename($args->{path_to_perl}) =~ m/^perl/);
 
@@ -371,14 +375,22 @@ sub new_from_existing_perl_cpanm {
     croak "Could not locate '$lib_dir'" unless (-d $lib_dir);
     croak "'$lib_dir' not writable" unless (-w $lib_dir);
 
-    my $testing_dir  = File::Spec->catdir(@directories[0 .. ($#directories - 1)]);
-    croak "'$testing_dir' not writable" unless (-w $testing_dir);
+    my $release_dir  = File::Spec->catdir(@directories[0 .. ($#directories - 1)]);
+    croak "'$release_dir' not writable" unless (-w $release_dir);
 
     my $this_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
     croak "Could not locate cpanm executable at '$this_cpanm'"
         unless (-x $this_cpanm);
 
-    return 1;
+    my $data = {
+        release_dir     => $release_dir,
+        bin_dir         => $bin_dir,
+        lib_dir         => $lib_dir,
+        this_perl       => $this_perl,
+        this_cpanm      => $this_cpanm,
+    };
+
+    return bless $data, $class;
 }
 
 1;
