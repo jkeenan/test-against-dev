@@ -4,8 +4,8 @@ require 5.10.1;
 my $mm_ver = ExtUtils::MakeMaker->VERSION;
 
 WriteMakefile(
-    NAME         => 'Test::Against::Blead',
-    VERSION_FROM => 'lib/Test/Against/Blead.pm',
+    NAME         => 'Test::Against::Dev',
+    VERSION_FROM => 'lib/Test/Against/Dev.pm',
     AUTHOR       => 'James E Keenan (jkeenan@cpan.org)',
     ABSTRACT     => 'Functions for testing modules against blead, a branch or a dev release',
     PREREQ_PM    => {

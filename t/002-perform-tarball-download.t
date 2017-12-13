@@ -8,15 +8,15 @@ use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Test::RequiresInternet ('ftp.funet.fi' => 21);
-BEGIN { use_ok( 'Test::Against::Blead' ); }
+BEGIN { use_ok( 'Test::Against::Dev' ); }
 
 my $tdir = tempdir(CLEANUP => 1);
 my $self;
 
-$self = Test::Against::Blead->new( {
+$self = Test::Against::Dev->new( {
     application_dir         => $tdir,
 } );
-isa_ok ($self, 'Test::Against::Blead');
+isa_ok ($self, 'Test::Against::Dev');
 
 my $host = 'ftp.funet.fi';
 my $hostdir = '/pub/languages/perl/CPAN/src/5.0';

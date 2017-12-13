@@ -1,4 +1,4 @@
-TODO list for Perl module Test::Against::Blead
+TODO list for Perl module Test::Against::Dev
 
 2017-12-11: configure_build_install_perl() currently only supports 'gz' decompression.
 Extend it to 'bz2' and xz'.

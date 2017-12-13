@@ -14,7 +14,7 @@ use Data::Dump ( qw| dd pp | );
 #use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 #use Test::RequiresInternet ('ftp.funet.fi' => 21);
 
-BEGIN { use_ok( 'Test::Against::Blead' ); }
+BEGIN { use_ok( 'Test::Against::Dev' ); }
 
 my $self;
 my $good_path = '/home/jkeenan/tmp/bbc/testing/perl-5.27.6/bin/perl';
@@ -24,7 +24,7 @@ my $perl_version = 'perl-5.27.6';
 {
     local $@;
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( [
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( [
             path_to_perl    => $good_path,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -37,7 +37,7 @@ my $perl_version = 'perl-5.27.6';
 {
     local $@;
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $good_path,
             perl_version    => $perl_version,
         } );
@@ -49,7 +49,7 @@ my $perl_version = 'perl-5.27.6';
 {
     local $@;
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $good_path,
             results_dir     => $tdir,
         } );
@@ -62,7 +62,7 @@ my $perl_version = 'perl-5.27.6';
     local $@;
     my $path_to_perl = '/home/jkeenan/tmp/foo/bar';
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -75,7 +75,7 @@ my $perl_version = 'perl-5.27.6';
 {
     local $@;
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path => $good_path,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -89,7 +89,7 @@ my $perl_version = 'perl-5.27.6';
     local $@;
     my $path_to_perl = '/home/jkeenan/tmp/foo/perl';
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -103,7 +103,7 @@ my $perl_version = 'perl-5.27.6';
     local $@;
     my $path_to_perl = '/home/jkeenan/tmp/baz/perl';
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -119,7 +119,7 @@ my $perl_version = 'perl-5.27.6';
     my $e = File::Spec->catdir($d, 'lib');
     my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -135,7 +135,7 @@ my $perl_version = 'perl-5.27.6';
     my $e = File::Spec->catdir($d, 'lib');
     my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -151,7 +151,7 @@ my $perl_version = 'perl-5.27.6';
     my $e = File::Spec->catdir($d, 'lib');
     my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -169,7 +169,7 @@ my $perl_version = 'perl-5.27.6';
     my $path_to_perl = File::Spec->catfile($bin_dir, 'perl');
     my $path_to_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
     eval {
-        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
             results_dir     => $tdir,
             perl_version    => $perl_version,
@@ -180,13 +180,13 @@ my $perl_version = 'perl-5.27.6';
 }
 
 {
-    $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+    $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
         path_to_perl    => $good_path,
         results_dir     => $tdir,
         perl_version    => $perl_version,
     } );
     ok(defined $self, "new_from_existing_perl_cpanm() returned defined value");
-    isa_ok($self, 'Test::Against::Blead');
+    isa_ok($self, 'Test::Against::Dev');
     pp({%$self});
     pass($0);
 }

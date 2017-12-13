@@ -1,4 +1,4 @@
-pod2text Test::Against::Blead.pm > README
+pod2text Test::Against::Dev.pm > README
 
 If this is still here it means the programmer was too lazy to create the readme file.
 

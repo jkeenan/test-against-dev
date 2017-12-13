@@ -1,8 +1,8 @@
-# .gitignore for Test-Against-Blead
+# .gitignore for Test-Against-Dev
 /MANIFEST.bak
 /Makefile
 /Makefile.old
-/Test-Against-Blead-*.tar.gz
+/Test-Against-Dev-*.tar.gz
 /MYMETA.yml
 /MYMETA.json
 /blib

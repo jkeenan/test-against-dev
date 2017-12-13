@@ -1,4 +1,4 @@
-package Test::Against::Blead;
+package Test::Against::Dev;
 use strict;
 use 5.10.1;
 our $VERSION = '0.01';
@@ -170,13 +170,13 @@ sub configure_build_install_perl {
     my $verbose = delete $args->{verbose} || '';
 
     # What I want in terms of verbose output:
-    # 0: No verbose output from Test::Against::Blead
+    # 0: No verbose output from Test::Against::Dev
     #    Minimal output from tar, Configure, make
     #    (tar xzf; Configure, make 1>/dev/null
-    # 1: Verbose output from Test::Against::Blead
+    # 1: Verbose output from Test::Against::Dev
     #    Minimal output from tar, Configure, make
     #    (tar xzf; Configure, make 1>/dev/null
-    # 2: Verbose output from Test::Against::Blead
+    # 2: Verbose output from Test::Against::Dev
     #    Verbose output from tar ('v')
     #    Regular output from Configure, make
 

@@ -42,4 +42,4 @@ dump
 \.appveyor.yml*
 ^README.md
 tmp/
-Test-Against-Blead-*.tar.gz
+Test-Against-Dev-*.tar.gz
