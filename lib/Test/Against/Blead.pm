@@ -4,6 +4,7 @@ use 5.10.1;
 our $VERSION = '0.01';
 use Carp;
 use Cwd;
+use File::Basename;
 use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
@@ -338,6 +339,37 @@ sub run_cpanm {
     return 1;
 }
 
+sub new_from_existing_perl_cpanm {
+    my ($class, $args) = @_;
+    $args //= {};
+    croak "new_from_existing_perl_cpanm: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    croak "Need 'path_to_perl' element in arguments hash ref"
+        unless exists $args->{path_to_perl};
+    croak "Could not locate perl executable at '$args->{path_to_perl}'"
+        unless (-x $args->{path_to_perl} and basename($args->{path_to_perl}) =~ m/^perl/);
+
+    my $this_perl = $args->{path_to_perl};
+
+    # Is the perl's parent directory bin?
+    # Is there a lib directory next to parent bin?
+    # Can the user write to directory lib?
+    # What is the parent of bin and lib?
+    # Is there a 'cpanm' executable located in bin?
+
+    my ($volume,$directories,$file) = File::Spec->splitpath($this_perl);
+    my @directories = File::Spec->splitdir($directories);
+    pop @directories if $directories[-1] eq '';
+    croak "'$this_perl' not found in directory named 'bin/'"
+        unless $directories[-1] eq 'bin';
+
+    my $libdir = File::Spec->catdir(@directories[0 .. ($#directories - 1)], 'lib');
+    croak "Could not locate '$libdir'" unless (-d $libdir);
+    croak "'$libdir' not writable" unless (-w $libdir);
+
+    return 1;
+}
 
 1;
 
