@@ -10,10 +10,9 @@ use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Test::RequiresInternet ('ftp.funet.fi' => 21);
-BEGIN { use_ok( 'Test::Against::Dev' ); }
+use Test::Against::Dev;
 
-#my $tdir = tempdir(CLEANUP => 1);
-my $tdir = '/home/jkeenan/tmp/special';
+my $tdir = tempdir(CLEANUP => 1);
 my $self;
 
 $self = Test::Against::Dev->new( {

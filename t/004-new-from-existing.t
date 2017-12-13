@@ -5,27 +5,26 @@ use warnings;
 use feature 'say';
 
 use Test::More;
-plan skip_all => 'Testing not feasible except by author'
-    unless $ENV{PERL_AUTHOR_TESTING};
 use Carp;
 use File::Basename;
+use File::Spec::Functions ( qw| catdir catfile | );
+use File::Path ( qw| make_path | );
 use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
-#use Capture::Tiny ( qw| capture_stdout capture_stderr | );
-#use Test::RequiresInternet ('ftp.funet.fi' => 21);
-
-BEGIN { use_ok( 'Test::Against::Dev' ); }
+use Test::RequiresInternet ('ftp.funet.fi' => 21);
+use Test::Against::Dev;
 
 my $self;
-my $good_path = '/home/jkeenan/tmp/bbc/testing/perl-5.27.6/bin/perl';
+my $perl_version = 'perl-5.27.4';
+
 my $tdir = tempdir(CLEANUP => 1);
-my $perl_version = 'perl-5.27.6';
+ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
 
 {
     local $@;
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( [
-            path_to_perl    => $good_path,
+            path_to_perl    => $tdir,
             results_dir     => $tdir,
             perl_version    => $perl_version,
         ] );
@@ -38,7 +37,7 @@ my $perl_version = 'perl-5.27.6';
     local $@;
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $good_path,
+            path_to_perl    => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -50,7 +49,7 @@ my $perl_version = 'perl-5.27.6';
     local $@;
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $good_path,
+            path_to_perl    => $tdir,
             results_dir     => $tdir,
         } );
     };
@@ -60,7 +59,22 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $path_to_perl = '/home/jkeenan/tmp/foo/bar';
+    eval {
+        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+            path => $tdir,
+            results_dir     => $tdir,
+            perl_version    => $perl_version,
+        } );
+    };
+    like($@, qr/Need 'path_to_perl' element in arguments hash ref/,
+        "Got expected error message: lack 'path_to_perl' element in hash ref");
+}
+
+####################
+
+{
+    local $@;
+    my $path_to_perl = catfile($tdir, 'foo', 'bar');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -74,20 +88,7 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path => $good_path,
-            results_dir     => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Need 'path_to_perl' element in arguments hash ref/,
-        "Got expected error message: lack 'path_to_perl' element in hash ref");
-}
-
-{
-    local $@;
-    my $path_to_perl = '/home/jkeenan/tmp/foo/perl';
+    my $path_to_perl = catfile($tdir, 'foo', 'perl');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -101,7 +102,7 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $path_to_perl = '/home/jkeenan/tmp/baz/perl';
+    my $path_to_perl = catfile($tdir, 'baz', 'perl');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -115,9 +116,9 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $d = '/home/jkeenan/tmp/bom';
-    my $e = File::Spec->catdir($d, 'lib');
-    my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
+    my $d = catfile($tdir, 'bom');
+    my $e = catdir($d, 'lib');
+    my $path_to_perl = catfile($d, 'bin', 'perl');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -131,9 +132,9 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $d = '/home/jkeenan/tmp/bop';
-    my $e = File::Spec->catdir($d, 'lib');
-    my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
+    my $d = catfile($tdir, 'boo');
+    my $e = catdir($d, 'lib');
+    my $path_to_perl = catfile($d, 'bin', 'perl');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -147,9 +148,9 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $d = '/home/jkeenan/tmp/boq';
-    my $e = File::Spec->catdir($d, 'lib');
-    my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
+    my $d = catfile($tdir, 'boq');
+    my $e = catdir($d, 'lib');
+    my $path_to_perl = catfile($d, 'bin', 'perl');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -163,11 +164,11 @@ my $perl_version = 'perl-5.27.6';
 
 {
     local $@;
-    my $d = '/home/jkeenan/tmp/bos';
-    my $e = File::Spec->catdir($d, 'lib');
-    my $bin_dir = File::Spec->catfile($d, 'bin');
-    my $path_to_perl = File::Spec->catfile($bin_dir, 'perl');
-    my $path_to_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
+    my $d = catfile($tdir, 'bos');
+    my $e = catdir($d, 'lib');
+    my $bin_dir = catfile($d, 'bin');
+    my $path_to_perl = catfile($bin_dir, 'perl');
+    my $path_to_cpanm = catfile($bin_dir, 'cpanm');
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
@@ -179,7 +180,18 @@ my $perl_version = 'perl-5.27.6';
         "Got expected error message: Could not locate an executable 'cpanm' at '$path_to_cpanm'");
 }
 
-{
+####################
+
+note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against installed 'perl' and 'cpanm'")
+    unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+
+SKIP: {
+    skip 'Test assumes installed perl and cpanm', 8
+        unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+
+    my $good_path = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+    croak "Could not locate '$good_path'" unless (-x $good_path);
+    my ($perl_version) = $good_path =~ s{^.*/([^/]*?)/bin/perl$}{$1}r;
     $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
         path_to_perl    => $good_path,
         results_dir     => $tdir,
@@ -187,8 +199,83 @@ my $perl_version = 'perl-5.27.6';
     } );
     ok(defined $self, "new_from_existing_perl_cpanm() returned defined value");
     isa_ok($self, 'Test::Against::Dev');
-    pp({%$self});
-    pass($0);
+
+    my ($expected_release_dir) = $good_path =~ s{^(.*)/bin/perl}{$1}r;
+    my $release_dir = $self->get_release_dir();
+    my $bin_dir = $self->get_bin_dir();
+    my $lib_dir = $self->get_lib_dir();
+    is($release_dir, $expected_release_dir, "Got expected release_dir '$release_dir'");
+    is($bin_dir, catdir($release_dir, 'bin'), "Got expected bin_dir '$bin_dir'");
+    is($lib_dir, catdir($release_dir, 'lib'), "Got expected lib_dir '$lib_dir'");
+    is($self->{this_perl}, catfile($bin_dir, 'perl'), "Got expected 'perl'");
+    my $this_perl = $self->get_this_perl();
+    is($this_perl, $good_path, "Got expected 'perl': $this_perl");
+    my $this_cpanm = $self->get_this_cpanm();
+    is($this_cpanm, catfile($bin_dir, 'cpanm'), "Got expected 'cpanm': $this_cpanm");
+
+}
+
+########## SUBROUTINES ##########
+
+sub create_sample_files {
+    my $tdir = shift;
+    my ($parent_dir, @created, $f, $g);
+    my ($bin_dir, $lib_dir);
+
+    # Create foo/bar only
+    $parent_dir = catdir($tdir, 'foo');
+    @created = make_path($parent_dir, { mode => 0755 });
+    $f = create_file($parent_dir, 'bar');
+
+    # Create foo/perl but don't make it executable
+    $f = create_file($parent_dir, 'perl');
+
+    # Create an executable perl but not in a directory named bin/
+    $parent_dir = catdir($tdir, 'baz');
+    @created = make_path($parent_dir, { mode => 0755 });
+    $f = create_file($parent_dir, 'perl', 0755);
+
+    # Create executable perl in bin/ but don't create a lib/ directory
+    $bin_dir = catdir($tdir, 'bom', 'bin');
+    @created = make_path($bin_dir, { mode => 0755 });
+    $f = create_file($bin_dir, 'perl', 0755);
+
+    # Create executable perl in bin/; create lib/ but don't make it writable
+    $bin_dir = catdir($tdir, 'boo', 'bin');
+    @created = make_path($bin_dir, { mode => 0755 });
+    $f = create_file($bin_dir, 'perl', 0755);
+    $lib_dir = catdir($tdir, 'boo', 'lib');
+    @created = make_path($lib_dir, { mode => 0555 });
+
+    # Create executable perl in bin/, writable lib/, but then make top-level
+    # unwriteable
+    $parent_dir = catdir($tdir, 'boq');
+    $bin_dir = catdir($parent_dir, 'bin');
+    $lib_dir = catdir($parent_dir, 'lib');
+    @created = make_path($parent_dir, $bin_dir, $lib_dir, { mode => 0755 });
+    $f = create_file($bin_dir, 'perl', 0755);
+    chmod 0555, $parent_dir;
+
+    # Create executable perl in bin/, writable lib/, create cpanm in bin but
+    # don't make it executable
+    $parent_dir = catdir($tdir, 'bos');
+    $bin_dir = catdir($parent_dir, 'bin');
+    $lib_dir = catdir($parent_dir, 'lib');
+    @created = make_path($parent_dir, $bin_dir, $lib_dir, { mode => 0755 });
+    $f = create_file($bin_dir, 'perl', 0755);
+    $g = create_file($bin_dir, 'cpanm', 0644);
+
+    return 1;
+}
+
+sub create_file {
+    my ($directory, $filename, $mode) = @_;
+    my $f = catfile($directory, $filename);
+    open my $OUT, '>', $f or croak "Unable to open $f for writing";
+    close $OUT or croak "Unable to close $f after writing";
+    $mode ||= 0644;
+    chmod $mode, $f;
+    return $f;
 }
 
 done_testing();

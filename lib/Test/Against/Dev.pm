@@ -220,6 +220,16 @@ sub configure_build_install_perl {
     return $this_perl;
 }
 
+sub get_this_perl {
+    my $self = shift;
+    if (! defined $self->{this_perl}) {
+        croak "perl has not yet been installed; run configure_build_install_perl";
+    }
+    else {
+        return $self->{this_perl};
+    }
+}
+
 sub get_bin_dir {
     my $self = shift;
     if (! defined $self->{bin_dir}) {
@@ -278,6 +288,16 @@ sub fetch_cpanm {
     my $cnt = chmod 0755, $this_cpanm;
     croak "Unable to make '$this_cpanm' executable" unless $cnt;
     $self->{this_cpanm} = $this_cpanm;
+}
+
+sub get_this_cpanm {
+    my $self = shift;
+    if (! defined $self->{this_cpanm}) {
+        croak "cpanm has not yet been installed against the 'perl' being tested; run fetch_cpanm()";
+    }
+    else {
+        return $self->{this_cpanm};
+    }
 }
 
 sub get_cpanm_dir {
