@@ -18,6 +18,7 @@ my $self;
 my $perl_version = 'perl-5.27.4';
 
 my $tdir = tempdir(CLEANUP => 1);
+#my $tdir = '/home/jkeenan/tmp/bbc/results';
 ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
 
 {

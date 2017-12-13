@@ -416,9 +416,13 @@ sub gzip_cpanm_build_log {
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
-    my $gzipped_build_log = $self->{title} . '-' .
-        $self->{perl_version};
-    $gzipped_build_log .= '.build.log.gz';
+    my $gzipped_build_log = join('.' => (
+        $self->{title},
+        $self->{perl_version},
+        'build',
+        'log',
+        'gz'
+    ) );
     my $gzlog = File::Spec->catfile($self->{buildlogs_dir}, $gzipped_build_log);
     system(qq| gzip -c $real_log > $gzlog |)
         and croak "Unable to gzip $real_log to $gzlog";
