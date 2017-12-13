@@ -283,7 +283,7 @@ sub fetch_cpanm {
         croak "Unable to locate '$this_cpanm'";
     }
     else {
-        say "Installed '$this_cpanm'";
+        say "Installed '$this_cpanm'" if $verbose;
     }
     my $cnt = chmod 0755, $this_cpanm;
     croak "Unable to make '$this_cpanm' executable" unless $cnt;
