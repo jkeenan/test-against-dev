@@ -345,8 +345,6 @@ sub new_from_existing_perl_cpanm {
     croak "new_from_existing_perl_cpanm: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
-    #croak "Need 'path_to_perl' element in arguments hash ref"
-    #    unless exists $args->{path_to_perl};
     for my $el ( qw| path_to_perl results_dir perl_version | ) {
         croak "Need '$el' element in arguments hash ref"
             unless exists $args->{$el};
@@ -383,6 +381,8 @@ sub new_from_existing_perl_cpanm {
         unless (-x $this_cpanm);
 
     my $data = {
+        perl_version    => $args->{perl_version},
+        results_dir     => $args->{results_dir},
         release_dir     => $release_dir,
         bin_dir         => $bin_dir,
         lib_dir         => $lib_dir,

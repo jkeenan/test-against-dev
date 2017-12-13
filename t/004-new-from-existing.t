@@ -179,4 +179,16 @@ my $perl_version = 'perl-5.27.6';
         "Got expected error message: Could not locate an executable 'cpanm' at '$path_to_cpanm'");
 }
 
+{
+    $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+        path_to_perl    => $good_path,
+        results_dir     => $tdir,
+        perl_version    => $perl_version,
+    } );
+    ok(defined $self, "new_from_existing_perl_cpanm() returned defined value");
+    isa_ok($self, 'Test::Against::Blead');
+    pp({%$self});
+    pass($0);
+}
+
 done_testing();
