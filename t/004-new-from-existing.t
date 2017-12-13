@@ -21,7 +21,6 @@ my $good_path = '/home/jkeenan/tmp/bbc/testing/perl-5.27.6/bin/perl';
 
 {
     local $@;
-#    my $path_to_perl = '/home/jkeenan/foo/bar';
     eval {
         $self = Test::Against::Blead->new_from_existing_perl_cpanm( [
             path_to_perl    => $good_path,
@@ -105,6 +104,37 @@ my $good_path = '/home/jkeenan/tmp/bbc/testing/perl-5.27.6/bin/perl';
     like($@, qr/'$e' not writable/,
         "Got expected error message: '$e' not writable");
 }
+
+{
+    local $@;
+    my $d = '/home/jkeenan/tmp/boq';
+    my $e = File::Spec->catdir($d, 'lib');
+    my $path_to_perl = File::Spec->catfile($d, 'bin', 'perl');
+    eval {
+        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+            path_to_perl    => $path_to_perl,
+        } );
+    };
+    like($@, qr/'$d' not writable/,
+        "Got expected error message: '$d' not writable");
+}
+
+{
+    local $@;
+    my $d = '/home/jkeenan/tmp/bos';
+    my $e = File::Spec->catdir($d, 'lib');
+    my $bin_dir = File::Spec->catfile($d, 'bin');
+    my $path_to_perl = File::Spec->catfile($bin_dir, 'perl');
+    my $path_to_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
+    eval {
+        $self = Test::Against::Blead->new_from_existing_perl_cpanm( {
+            path_to_perl    => $path_to_perl,
+        } );
+    };
+    like($@, qr/Could not locate cpanm executable at '$path_to_cpanm'/,
+        "Got expected error message: Could not locate an executable 'cpanm' at '$path_to_cpanm'");
+}
+
 
 
 done_testing();

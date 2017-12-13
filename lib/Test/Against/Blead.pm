@@ -352,10 +352,12 @@ sub new_from_existing_perl_cpanm {
 
     my $this_perl = $args->{path_to_perl};
 
-    # Is the perl's parent directory bin?
-    # Is there a lib directory next to parent bin?
-    # Can the user write to directory lib?
-    # What is the parent of bin and lib?
+    # Is the perl's parent directory bin/?
+    # Is there a lib/ directory next to parent bin/?
+    # Can the user write to directory lib/?
+    # What is the parent of bin/ and lib/?
+    # Is that parent writable (as user will need to create .cpanm/ and
+    # .cpanreporter/ there)?
     # Is there a 'cpanm' executable located in bin?
 
     my ($volume,$directories,$file) = File::Spec->splitpath($this_perl);
@@ -363,10 +365,18 @@ sub new_from_existing_perl_cpanm {
     pop @directories if $directories[-1] eq '';
     croak "'$this_perl' not found in directory named 'bin/'"
         unless $directories[-1] eq 'bin';
+    my $bin_dir = File::Spec->catdir(@directories);
 
-    my $libdir = File::Spec->catdir(@directories[0 .. ($#directories - 1)], 'lib');
-    croak "Could not locate '$libdir'" unless (-d $libdir);
-    croak "'$libdir' not writable" unless (-w $libdir);
+    my $lib_dir = File::Spec->catdir(@directories[0 .. ($#directories - 1)], 'lib');
+    croak "Could not locate '$lib_dir'" unless (-d $lib_dir);
+    croak "'$lib_dir' not writable" unless (-w $lib_dir);
+
+    my $testing_dir  = File::Spec->catdir(@directories[0 .. ($#directories - 1)]);
+    croak "'$testing_dir' not writable" unless (-w $testing_dir);
+
+    my $this_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
+    croak "Could not locate cpanm executable at '$this_cpanm'"
+        unless (-x $this_cpanm);
 
     return 1;
 }
