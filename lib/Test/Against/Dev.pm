@@ -386,7 +386,15 @@ sub run_cpanm {
         $self->get_this_cpanm,
         @modules,
     );
-    system(@cmd) and croak "Unable to install modules from list";
+    eval {
+        local $@;
+        my $rv = system(@cmd);
+        say "<$@>" if $@;
+        if ($verbose) {
+            say $self->get_this_cpanm(), " exited with ", $rv >> 8;
+        }
+    };
+
 
     return 1;
 }

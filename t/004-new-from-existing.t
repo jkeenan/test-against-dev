@@ -216,6 +216,8 @@ SKIP: {
     pp({ %{$self} });
     note("Status");
 
+    my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
+    note("Expecting to log cpanm in $expected_log");
     {
         local $@;
         my $mod = 'Module::Build';
@@ -236,12 +238,13 @@ SKIP: {
             module_file => $file,
             verbose     => 1,
         } );
-        if ($@) {
-            fail("run_cpanm failed to install files listed in $file");
+        unless ($@) {
+            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
         }
         else {
-            pass("run_cpanm installed files listed in $file (or reported that they were already installed)");
+            fail("run_cpanm did not operate as intended");
         }
+
     }
 
 }
