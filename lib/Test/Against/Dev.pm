@@ -402,23 +402,27 @@ sub run_cpanm {
     my $gzipped_build_log = $self->gzip_cpanm_build_log();
     say "See gzipped build.log in $gzipped_build_log" if $verbose;
 
-    return 1;
+    return $gzipped_build_log;
 }
 
-#$self->{buildlogs_dir} = $buildlogs_dir;
-#/home/jkeenan/tmp/bbc/testing/perl-5.27.6/
-#    $gzbuildlogname =
-#    qq|${title}-${short_release}-${datestamp}-01.build.log.gz|;
-#
 sub gzip_cpanm_build_log {
     my ($self) = @_;
     my $build_log_link = File::Spec->catfile($self->get_cpanm_dir, 'build.log');
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
+    # Read the directory holding gzipped build.logs.  If there are no files
+    # whose names match the pattern, then set $run to 01.  If there are,
+    # determine the next appropriate run number.
+    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.\d{2}\.build\.log\.gz$/;
+    opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
+    my @files_found = grep { -f $_ and $_ =~ m/$pattern/ } readdir $DIRH;
+    closedir $DIRH or croak "Unable to close buildlogs_dir after reading";
+    my $srun = (! @files_found) ? sprintf("%02d" => 1) : sprintf("%02d" => (scalar(@files_found) + 1));
     my $gzipped_build_log = join('.' => (
         $self->{title},
         $self->{perl_version},
+        $srun,
         'build',
         'log',
         'gz'

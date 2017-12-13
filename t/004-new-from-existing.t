@@ -218,6 +218,7 @@ SKIP: {
     note("Status");
 
     my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
+    my $gzipped_build_log;
     note("Expecting to log cpanm in $expected_log");
     {
         local $@;
@@ -234,20 +235,21 @@ SKIP: {
         local $@;
         my $mod = 'Module::Build';
         my $list = [ $mod ];
-        $self->run_cpanm( {
+        $gzipped_build_log = $self->run_cpanm( {
             module_list => $list,
             title       => 'just-one-module',
             verbose     => 1,
         } );
         if ($@) { fail("run_cpanm failed to install $mod"); }
         else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
     }
 
     {
         local $@;
         my $file = catfile('t', 'data', 'two-modules.txt');
         ok(-f $file, "Located $file for testing");
-        $self->run_cpanm( {
+        $gzipped_build_log = $self->run_cpanm( {
             module_file => $file,
             title       => 'two-modules-one-likely-to-fail',
             verbose     => 1,
@@ -258,6 +260,7 @@ SKIP: {
         else {
             fail("run_cpanm did not operate as intended");
         }
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
 
     }
 
