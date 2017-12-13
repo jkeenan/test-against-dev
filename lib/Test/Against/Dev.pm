@@ -349,11 +349,38 @@ sub run_cpanm {
     }
     if ($args->{module_list}) {
         croak "run_cpanm: Must supply array ref for 'module_list'"
-            unless ref($args->{module_list}) eq 'HASH';
+            unless ref($args->{module_list}) eq 'ARRAY';
     }
 
     unless (-d $self->{vresults_dir}) {
         $self->setup_results_directories();
+    }
+
+    my $cpanreporter_dir = File::Spec->catdir($self->get_release_dir(), '.cpanreporter');
+    unless (-d $cpanreporter_dir) { make_path($cpanreporter_dir, { mode => 0755 }); }
+    croak "Could not locate $cpanreporter_dir" unless (-d $cpanreporter_dir);
+    $self->{cpanreporter_dir} = $cpanreporter_dir;
+
+    unless ($self->{cpanm_dir}) {
+        say "Defining previously undefined cpanm_dir" if $verbose;
+        my $cpanm_dir = File::Spec->catdir($self->get_release_dir(), '.cpanm');
+        unless (-d $cpanm_dir) { make_path($cpanm_dir, { mode => 0755 }); }
+        croak "Could not locate $cpanm_dir" unless (-d $cpanm_dir);
+        $self->{cpanm_dir} = $cpanm_dir;
+    }
+
+    say "cpanm_dir: ", $self->get_cpanm_dir() if $verbose;
+    local $ENV{PERL_CPANM_HOME} = $self->get_cpanm_dir();
+
+    if ($args->{module_list}) {
+        my @list = @{$args->{module_list}};
+        my @cmd = (
+            $self->get_this_perl,
+            "-I$self->get_lib_dir",
+            $self->get_this_cpanm,
+            @list,
+        );
+        system(@cmd) and croak "Unable to install modules from list";
     }
 
     return 1;

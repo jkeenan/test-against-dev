@@ -215,6 +215,19 @@ SKIP: {
 
     pp({ %{$self} });
     note("Status");
+
+    {
+        local $@;
+        my $mod = 'Module::Build';
+        my $list = [ $mod ];
+        $self->run_cpanm( {
+            module_list => $list,
+            verbose     => 1,
+        } );
+        if ($@) { fail("run_cpanm failed to install $mod"); }
+        else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
+    }
+
 }
 
 done_testing();
