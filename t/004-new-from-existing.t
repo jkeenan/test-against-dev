@@ -222,8 +222,20 @@ SKIP: {
         local $@;
         my $mod = 'Module::Build';
         my $list = [ $mod ];
+        eval {
+            $self->run_cpanm( { module_list => $list, verbose => 1 } );
+        };
+        like($@, qr/Must supply value for 'title' element/,
+            "Got expected failure message for lack of 'title' element");
+    }
+
+    {
+        local $@;
+        my $mod = 'Module::Build';
+        my $list = [ $mod ];
         $self->run_cpanm( {
             module_list => $list,
+            title       => 'just-one-module',
             verbose     => 1,
         } );
         if ($@) { fail("run_cpanm failed to install $mod"); }
@@ -236,6 +248,7 @@ SKIP: {
         ok(-f $file, "Located $file for testing");
         $self->run_cpanm( {
             module_file => $file,
+            title       => 'two-modules-one-likely-to-fail',
             verbose     => 1,
         } );
         unless ($@) {

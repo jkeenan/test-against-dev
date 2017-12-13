@@ -73,7 +73,7 @@ SKIP: {
 
     {
         local $@;
-        eval { $self->run_cpanm( [ module_file => 'foo' ] ); };
+        eval { $self->run_cpanm( [ module_file => 'foo', title => 'not-cpan-river' ] ); };
         like($@, qr/run_cpanm: Must supply hash ref as argument/,
             "Got expected error message: absence of hashref");
     }
@@ -81,7 +81,7 @@ SKIP: {
     {
         local $@;
         my $bad_element = 'foo';
-        eval { $self->run_cpanm( { $bad_element => 'bar' } ); };
+        eval { $self->run_cpanm( { $bad_element => 'bar', title => 'not-cpan-river' } ); };
         like($@, qr/run_cpanm: '$bad_element' is not a valid element/,
             "Got expected error message: bad argument");
     }
@@ -91,6 +91,7 @@ SKIP: {
         eval { $self->run_cpanm( {
             module_file => 'foo',
             module_list => [ 'Foo::Bar', 'Alpha::Beta' ],
+            title => 'not-cpan-river',
         } ); };
         like($@, qr/run_cpanm: Supply either a file for 'module_file' or an array ref for 'module_list' but not both/,
             "Got expected error message: bad mixture of arguments");
@@ -99,14 +100,14 @@ SKIP: {
     {
         local $@;
         my $bad_module_file = 'foo';
-        eval { $self->run_cpanm( { module_file => $bad_module_file } ); };
+        eval { $self->run_cpanm( { module_file => $bad_module_file, title => 'not-cpan-river' } ); };
         like($@, qr/run_cpanm: Could not locate '$bad_module_file'/,
             "Got expected error message: module_file not found");
     }
 
     {
         local $@;
-        eval { $self->run_cpanm( { module_list => "Foo::Bar" } ); };
+        eval { $self->run_cpanm( { module_list => "Foo::Bar", title => 'not-cpan-river' } ); };
         like($@, qr/run_cpanm: Must supply array ref for 'module_list'/,
             "Got expected error message: value for module_list not an array ref");
     }

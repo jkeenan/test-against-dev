@@ -335,7 +335,7 @@ sub run_cpanm {
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
-        module_file module_list
+        module_file module_list title
     | );
     for my $k (keys %$args) {
         croak "run_cpanm: '$k' is not a valid element"
@@ -352,6 +352,11 @@ sub run_cpanm {
         croak "run_cpanm: Must supply array ref for 'module_list'"
             unless ref($args->{module_list}) eq 'ARRAY';
     }
+
+    unless (defined $args->{title} and length $args->{title}) {
+        croak "Must supply value for 'title' element";
+    }
+    $self->{title} = $args->{title};
 
     unless (-d $self->{vresults_dir}) {
         $self->setup_results_directories();
@@ -394,9 +399,30 @@ sub run_cpanm {
             say $self->get_this_cpanm(), " exited with ", $rv >> 8;
         }
     };
-
+    my $gzipped_build_log = $self->gzip_cpanm_build_log();
+    say "See gzipped build.log in $gzipped_build_log" if $verbose;
 
     return 1;
+}
+
+#$self->{buildlogs_dir} = $buildlogs_dir;
+#/home/jkeenan/tmp/bbc/testing/perl-5.27.6/
+#    $gzbuildlogname =
+#    qq|${title}-${short_release}-${datestamp}-01.build.log.gz|;
+#
+sub gzip_cpanm_build_log {
+    my ($self) = @_;
+    my $build_log_link = File::Spec->catfile($self->get_cpanm_dir, 'build.log');
+    croak "Did not find symlink for build.log at $build_log_link"
+        unless (-l $build_log_link);
+    my $real_log = readlink($build_log_link);
+    my $gzipped_build_log = $self->{title} . '-' .
+        $self->{perl_version};
+    $gzipped_build_log .= '.build.log.gz';
+    my $gzlog = File::Spec->catfile($self->{buildlogs_dir}, $gzipped_build_log);
+    system(qq| gzip -c $real_log > $gzlog |)
+        and croak "Unable to gzip $real_log to $gzlog";
+    return $gzlog;
 }
 
 sub new_from_existing_perl_cpanm {
