@@ -213,7 +213,11 @@ SKIP: {
     my $this_cpanm = $self->get_this_cpanm();
     is($this_cpanm, catfile($bin_dir, 'cpanm'), "Got expected 'cpanm': $this_cpanm");
 
+    pp({ %{$self} });
+    note("Status");
 }
+
+done_testing();
 
 ########## SUBROUTINES ##########
 
@@ -277,5 +281,3 @@ sub create_file {
     chmod $mode, $f;
     return $f;
 }
-
-done_testing();
