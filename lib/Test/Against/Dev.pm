@@ -8,9 +8,10 @@ use File::Basename;
 use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
-use File::Temp ( qw| tempdir | );
+use File::Temp ( qw| tempdir tempfile | );
 use Path::Tiny;
 use Perl::Download::FTP;
+use CPAN::cpanminus::reporter::RetainReports;
 
 # What args must be passed to constructor?
 # application top-level directory
@@ -414,7 +415,8 @@ sub gzip_cpanm_build_log {
     # Read the directory holding gzipped build.logs.  If there are no files
     # whose names match the pattern, then set $run to 01.  If there are,
     # determine the next appropriate run number.
-    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.\d{2}\.build\.log\.gz$/;
+    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.(\d{2})\.build\.log\.gz$/;
+    $self->{gzlog_pattern} = $pattern;
     opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
     my @files_found = grep { -f $_ and $_ =~ m/$pattern/ } readdir $DIRH;
     closedir $DIRH or croak "Unable to close buildlogs_dir after reading";
@@ -430,7 +432,7 @@ sub gzip_cpanm_build_log {
     my $gzlog = File::Spec->catfile($self->{buildlogs_dir}, $gzipped_build_log);
     system(qq| gzip -c $real_log > $gzlog |)
         and croak "Unable to gzip $real_log to $gzlog";
-    return $gzlog;
+    $self->{gzlog} = $gzlog;
 }
 
 sub new_from_existing_perl_cpanm {
@@ -485,6 +487,48 @@ sub new_from_existing_perl_cpanm {
     };
 
     return bless $data, $class;
+}
+
+sub analyze_cpanm_build_logs {
+    my ($self, $args) = shift;
+    $args //= {};
+    croak "perform_tarball_download: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    my $dryrun  = delete $args->{dryrun} || '';
+
+    my $gzlog = $self->{gzlog};
+    my ($srun) = basename($gzlog) =~ m/$self->{gzlog_pattern}/;
+    croak "Unable to identify run number within $gzlog filename"
+        unless $srun;
+    my $ranalysis_dir = File::Spec->catdir($self->{analysis_dir}, $srun);
+    unless (-d $ranalysis_dir) { make_path($ranalysis_dir, { mode => 0755 }); }
+        croak "Could not locate $ranalysis_dir" unless (-d $ranalysis_dir);
+
+    my ($fh, $working_log) = tempfile();
+    system(qq|gunzip -c $gzlog > $working_log|)
+        and croak "Unable to gunzip $gzlog to $working_log";
+
+    my $reporter = CPAN::cpanminus::reporter::RetainReports->new(
+      force => 1, # ignore mtime check on build.log
+      build_logfile => $working_log,
+      build_dir => $self->get_cpanm_dir,
+      'ignore-versions' => 1,
+    );
+    croak "Unable to create new reporter for $working_log"
+        unless defined $reporter;
+    if ($dryrun) {
+        say "Ready to process $working_log";
+        say "Reports will be written to $ranalysis_dir";
+    }
+    else {
+      no warnings 'redefine';
+      local *CPAN::cpanminus::reporter::RetainReports::_check_cpantesters_config_data = sub { 1 };
+      $reporter->set_report_dir($ranalysis_dir);
+      $reporter->run;
+    }
+    say "See results in $ranalysis_dir" if $verbose;
+    return $ranalysis_dir;
 }
 
 1;

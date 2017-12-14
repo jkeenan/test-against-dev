@@ -17,8 +17,8 @@ use Test::Against::Dev;
 my $self;
 my $perl_version = 'perl-5.27.4';
 
-my $tdir = tempdir(CLEANUP => 1);
-#my $tdir = '/home/jkeenan/tmp/bbc/results';
+#my $tdir = tempdir(CLEANUP => 1);
+my $tdir = '/home/jkeenan/tmp/bbc/results';
 ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
 
 {
@@ -261,9 +261,11 @@ SKIP: {
             fail("run_cpanm did not operate as intended");
         }
         ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-
     }
 
+    my $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
+    ok(-d $ranalysis_dir,
+        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
 }
 
 done_testing();
