@@ -105,7 +105,14 @@ So the output for particular CPAN libraries will look like this:
     Acme-CPANAuthors|ISHIGAKI|Acme-CPANAuthors-0.26|0.26|PASS|ISHIGAKI|Acme-CPANAuthors-0.26|0.26|PASS|...
     Algorithm-C3|HAARG|Algorithm-C3-0.10|0.10|PASS|HAARG|Algorithm-C3-0.10|0.10|PASS|...
 
-If a particular CPAN library receives a grade of C<PASS> one month and a grade of <FAIL> month, it ought to be inspected for the cause of that breakage.
+If a particular CPAN library receives a grade of C<PASS> one month and a grade
+of <FAIL> month, it ought to be inspected for the cause of that breakage.
+Sometimes the change in Perl 5 is wrong and needs to be reverted.  Sometimes
+the change in Perl 5 is correct (or, at least, plausible) but exposes
+sub-optimal code in the CPAN module.  Sometimes the failure is due to external
+conditions, such as a change in a C library on the testing platform.  There's
+no way to write code to figure out which situation -- or mix of situations --
+we are in.  The human user must intervene at this point.
 
 =head2 What Preparations Are Needed to Use This Library?
 
@@ -123,7 +130,8 @@ the testing period.  Otherwise, the results may reflect changes in that
 configuration rather than changes in Perl 5 core distribution code or changes
 in the targeted CPAN libraries.
 
-"Perl 5 configuration" means the way one calls F<Configure> when building Perl 5 from source, <e.g.>:
+"Perl 5 configuration" means the way one calls F<Configure> when building Perl
+5 from source, <e.g.>:
 
     sh ./Configure -des -Dusedevel \
         -Duseithreads \
