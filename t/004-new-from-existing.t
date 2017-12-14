@@ -6,6 +6,7 @@ use feature 'say';
 
 use Test::More;
 use Carp;
+use Cwd;
 use File::Basename;
 use File::Spec::Functions ( qw| catdir catfile | );
 use File::Path ( qw| make_path | );
@@ -17,6 +18,7 @@ use Test::Against::Dev;
 my $self;
 my $perl_version = 'perl-5.27.4';
 
+my $cwd = cwd();
 my $tdir = tempdir(CLEANUP => 1);
 #my $tdir = '/home/jkeenan/tmp/bbc/results';
 ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
@@ -279,6 +281,10 @@ SKIP: {
     ok($fpsvfile, "analyze_json_logs() returned true value");
     ok(-f $fpsvfile, "Located '$fpsvfile'");
 }
+
+# Try to ensure that we get back to where we started so that tempdirs can be
+# cleaned up
+chdir $cwd;
 
 done_testing();
 
