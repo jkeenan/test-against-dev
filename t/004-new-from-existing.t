@@ -17,8 +17,8 @@ use Test::Against::Dev;
 my $self;
 my $perl_version = 'perl-5.27.4';
 
-#my $tdir = tempdir(CLEANUP => 1);
-my $tdir = '/home/jkeenan/tmp/bbc/results';
+my $tdir = tempdir(CLEANUP => 1);
+#my $tdir = '/home/jkeenan/tmp/bbc/results';
 ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
 
 {
@@ -266,6 +266,18 @@ SKIP: {
     my $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
     ok(-d $ranalysis_dir,
         "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
+
+    my $rv;
+    {
+        local $@;
+        eval { $rv = $self->analyze_json_logs( run => 1, verbose => 1 ); };
+        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
+            "Got expected error message: absence of hash ref");
+    }
+
+    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
+    ok($fpsvfile, "analyze_json_logs() returned true value");
+    ok(-f $fpsvfile, "Located '$fpsvfile'");
 }
 
 done_testing();

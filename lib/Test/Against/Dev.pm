@@ -9,9 +9,13 @@ use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir tempfile | );
+use Archive::Tar;
+use Data::Dump ( qw| dd pp | );
+use CPAN::cpanminus::reporter::RetainReports;
+use JSON;
 use Path::Tiny;
 use Perl::Download::FTP;
-use CPAN::cpanminus::reporter::RetainReports;
+use Text::CSV_XS;
 
 # What args must be passed to constructor?
 # application top-level directory
@@ -529,6 +533,101 @@ sub analyze_cpanm_build_logs {
     }
     say "See results in $ranalysis_dir" if $verbose;
     return $ranalysis_dir;
+}
+
+=pod
+
+    perl analyze-json-logs.pl \
+        --resultsdir=/home/jkeenan/var/bbc/results \
+        --perlversion=perl-5.27.0 \
+        --stream_size=1000 \
+        --datestamp=20171203 \
+        --run=1 \
+        --verbose
+
+=cut
+
+sub analyze_json_logs {
+    my ($self, $args) = @_;
+    $args //= {};
+    croak "analyze_json_logs: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    croak "analyze_json_logs: Must supply a 'run' number"
+        unless (defined $args->{run} and length($args->{run}));
+    my $srun = sprintf("%02d" => $args->{run});
+
+    my $output = join('.' => (
+        $self->{title},
+        $self->{perl_version},
+        $srun,
+        'build',
+        'log',
+        'gz'
+    ) );
+    my $foutput = File::Spec->catfile($self->{storage_dir}, $output);
+    say "Output will be: $foutput" if $verbose;
+
+    my $vranalysis_dir = File::Spec->catdir($self->{analysis_dir}, $srun);
+    opendir my $DIRH, $vranalysis_dir or croak "Unable to open $vranalysis_dir for reading";
+    my @json_log_files = sort map { File::Spec->catfile('analysis', $srun, $_) }
+        grep { m/\.log\.json$/ } readdir $DIRH;
+    closedir $DIRH or croak "Unable to close $vranalysis_dir after reading";
+    dd(\@json_log_files) if $verbose;
+
+    my $versioned_results_dir = $self->{vresults_dir};
+    chdir $versioned_results_dir or croak "Unable to chdir to $versioned_results_dir";
+    my $cwd = cwd();
+    say "Now in $cwd" if $verbose;
+
+    my $tar = Archive::Tar->new;
+    $tar->add_files(@json_log_files);
+    $tar->write($foutput, COMPRESS_GZIP);
+    croak "$foutput not created" unless (-f $foutput);
+    say "Created $foutput" if $verbose;
+
+    my %data = ();
+    for my $log (@json_log_files) {
+        my $flog = File::Spec->catfile($cwd, $log);
+        my %this = ();
+        my $f = Path::Tiny::path($flog);
+        my $decoded = decode_json($f->slurp_utf8);
+        map { $this{$_} = $decoded->{$_} } ( qw| author dist distname distversion grade | );
+        $data{$decoded->{dist}} = \%this;
+    }
+    #pp(\%data);
+
+    my $psvfile = join('.' => (
+        $self->{title},
+        $self->{perl_version},
+        $srun,
+        'psv'
+    ) );
+
+    my $fpsvfile = File::Spec->catfile($self->{storage_dir}, $psvfile);
+    say "Output will be: $fpsvfile" if $verbose;
+
+    my @fields = ( qw| author distname distversion grade | );
+    my $perl_version = $self->{perl_version};
+    my $columns = [
+        'dist',
+        map { "$perl_version.$_" } @fields,
+    ];
+    my $psv = Text::CSV_XS->new({ binary => 1, auto_diag => 1, sep_char => '|', eol => $/ });
+    open my $OUT, ">:encoding(utf8)", $fpsvfile
+        or croak "Unable to open $fpsvfile for writing";
+    $psv->print($OUT, $columns), "\n" or $psv->error_diag;
+    for my $dist (sort keys %data) {
+        $psv->print($OUT, [
+           $dist,
+           @{$data{$dist}}{@fields},
+        ]) or $psv->error_diag;
+    }
+    close $OUT or croak "Unable to close $fpsvfile after writing";
+    croak "$fpsvfile not created" unless (-f $fpsvfile);
+    say "Examine pipe-separated values in $fpsvfile" if $verbose;
+
+    return $fpsvfile;
 }
 
 1;
