@@ -17,6 +17,150 @@ use Path::Tiny;
 use Perl::Download::FTP;
 use Text::CSV_XS;
 
+=head1 NAME
+
+Test::Against::Dev - Test CPAN modules against Perl dev releases
+
+=head1 SYNOPSIS
+
+TK
+
+=head1 DESCRIPTION
+
+=head2 Who Should Use This Library?
+
+This library should be used by anyone who wishes to assess the impact of
+month-to-month changes in the Perl 5 core distribution on the installability of
+libraries found on the Comprehensive Perl Archive Network (CPAN).
+
+=head2 The Problem to Be Addressed
+
+This problem is typically referred to as B<Blead Breaks CPAN> (or B<BBC> for
+short).  Perl 5 undergoes an annual development cycle characterized by monthly
+releases whose version numbers follow the convention of C<5.27.0>, C<5.27.1>,
+etc., where the middle digits are always odd numbers.  (Annual production
+releases and subsequent maintenance releases have even-numbered middle digits,
+I<e.g.>, C<5.26.0>, C<5.26.1>, etc.)  A monthly development release is
+essentially a roll-up of a month's worth of commits to the master branch known
+as B<blead> (pronounced I<"bleed">).  Changes in the Perl 5 code base have the
+potential to adversely impact the installability of existing CPAN libraries.
+Hence, various individuals have, over the years, developed ways of testing
+those libraries against blead and reporting problems to those people actively
+involved in the ongoing development of the Perl 5 core distribution -- people
+typically referred to as the Perl 5 Porters.
+
+This library is intended as a contribution to those efforts.  It is intended
+to provide a monthly snapshot of the impact of Perl 5 core development on
+important CPAN libraries.
+
+=head2 The Approach Test-Against-Dev Currently Takes and How It May Change in the Future
+
+Unlike other efforts, F<Test-Against-Dev> does not depend on test reports
+sent to L<CPANtesters.org|http://www.cpantesters.org/>.  Hence, it should be
+unaffected by any technical problems which that site may face.  As a
+consequence, however, a user of this library must be willing to maintain more
+of her own local infrastructure than a typical CPANtester would maintain.
+
+While this library could, in principle, be used to test the entirety of CPAN,
+it is probably better suited for testing selected subsets of CPAN libraries
+which the user deems important to her individual or organizational needs.
+
+This library is currently focused on monthly development releases of Perl 5.
+It does not directly provide a basis for identifying individual commits to
+blead which adversely impacted particular CPAN libraries.  It "tests against
+dev" more than it "tests against blead" -- hence, the name of the library.
+However, once it has gotten some production experience, it may be extended to,
+say, measure the effect of individual commits to blead on CPAN libraries using
+the previous monthly development release as a baseline.
+
+This library is currently focused on Perl 5 libraries publicly available on
+CPAN.  In the future, it may be extended to be able to include an
+organization's private libraries as well.
+
+This library is currently focused on blead, the master branch of the Perl 5
+core distribution.  However, it could, in principle, be extended to assess the
+impact on CPAN libraries of code in non-blead ("smoke-me") branches as well.
+
+=head2 What Is the Result Produced by This Library?
+
+Currently, if you run code built with this library on a monthly basis, you
+will produce an updated version of a pipe-separated-values (PSV) plain-text
+file suitable for opening in a spreadsheet.  The columns in that PSV file will
+be these:
+
+    dist
+    perl-5.27.0.author
+    perl-5.27.0.distname
+    perl-5.27.0.distversion
+    perl-5.27.0.grade
+    perl-5.27.1.author
+    perl-5.27.1.distname
+    perl-5.27.1.distversion
+    perl-5.27.1.grade
+    ...
+
+So the output for particular CPAN libraries will look like this:
+
+    dist|perl-5.27.0.author|perl-5.27.0.distname|perl-5.27.0.distversion|perl-5.27.0.grade|perl-5.27.1.author|perl-5.27.1.distname|perl-5.27.1.distversion|perl-5.27.1.grade|...
+    Acme-CPANAuthors|ISHIGAKI|Acme-CPANAuthors-0.26|0.26|PASS|ISHIGAKI|Acme-CPANAuthors-0.26|0.26|PASS|...
+    Algorithm-C3|HAARG|Algorithm-C3-0.10|0.10|PASS|HAARG|Algorithm-C3-0.10|0.10|PASS|...
+
+If a particular CPAN library receives a grade of C<PASS> one month and a grade of <FAIL> month, it ought to be inspected for the cause of that breakage.
+
+=head2 What Preparations Are Needed to Use This Library?
+
+=over 4
+
+=item * Platform
+
+The user should select a machine/platform which is likely to be reasonably stable over one Perl 5 annual development cycle.  We understand that the platform's system administrator will be updating system libraries for security and other reasons over time.  But it would be a hassle to run this software on a machine scheduled for a complete major version update of its operating system.
+
+=item * Perl 5 Configuration
+
+The user must decide on a Perl 5 configuration before using
+F<Test-Against-Dev> on a regular basis and not change that over the course of
+the testing period.  Otherwise, the results may reflect changes in that
+configuration rather than changes in Perl 5 core distribution code or changes
+in the targeted CPAN libraries.
+
+"Perl 5 configuration" means the way one calls F<Configure> when building Perl 5 from source, <e.g.>:
+
+    sh ./Configure -des -Dusedevel \
+        -Duseithreads \
+        -Doptimize="-O2 -pipe -fstack-protector -fno-strict-aliasing"
+
+So, you should not configure without threads one month but with threads
+another month.  You should not switch to debugging builds half-way through the
+testing period.
+
+=item * Selection of CPAN Libraries for Testing
+
+TK
+
+=back
+
+=head2 Different Ways of Using This Library
+
+TK
+
+=head1 METHODS
+
+=head2 C<new()>
+
+=over 4
+
+=item * Purpose
+
+=item * Arguments
+
+=item * Return Value
+
+=item * Comment
+
+=back
+
+=cut
+
 # What args must be passed to constructor?
 # application top-level directory
 # Constructor will get path to top-level directory for application,
@@ -631,4 +775,76 @@ sub analyze_json_logs {
 }
 
 1;
+
+=head1 LIMITATIONS
+
+This library has a fair number of direct and indirect dependencies on other
+CPAN libraries.  Consequently, the library may experience problems if there
+are major changes in those libraries.  In particular, the code is indirectly
+dependent upon F<App::cpanminus::reporter>, which in turn is dependent upon
+F<cpanm>.  (Nonetheless, this software could never have been written without
+those two libraries by Breno G. de Oliveira and Tatsuhiko Miyagawa,
+respectively.)
+
+=head1 AUTHOR
+
+    James E Keenan
+    CPAN ID: JKEENAN
+    jkeenan@cpan.org
+    http://thenceforward.net/perl
+
+=head1 SUPPORT
+
+This software has not yet been released to CPAN.  Until it does, you should
+contact the author directly at the email address listed below.  Please contact
+the author before submitting patches or pull requests.
+
+Once the software has been released to CPAN, you should report any bugs by
+mail to C<bug-Test-Against-Dev@rt.cpan.org> or through the web interface at
+L<http://rt.cpan.org>.
+
+=head1 COPYRIGHT
+
+This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
+
+The full text of the license can be found in the
+LICENSE file included with this module.
+
+Copyright James E Keenan 2017.  All rights reserved.
+
+=head1 ACKNOWLEDGEMENTS
+
+This library emerged in the wake of the author's participation in the Perl 5
+Core Hackathon held in Amsterdam, Netherlands, in October 2017.  The author
+thanks the lead organizers of that event, Sawyer X and Todd Rinaldo, for the
+invitation to the hackathon.  The event could not have happened without the
+generous contributions from the following companies:
+
+=over 4
+
+=item * L<Booking.com|https://www.booking.com>
+
+=item * L<cPanel|https://cpanel.com>
+
+=item * L<Craigslist|https://www.craigslist.org/about/craigslist_is_hiring>
+
+=item * L<Bluehost|https://www.bluehost.com/>
+
+=item * L<Assurant|https://www.assurantmortgagesolutions.com/>
+
+=item * L<Grant Street Group|https://grantstreet.com/>
+
+=back
+
+=head1 SEE ALSO
+
+perl(1). CPAN::cpanminus::reporter::RetainReports(3).  Perl::Download::FTP(3).
+App::cpanminus::reporter(3).  cpanm(3).
+
+L<2017 Perl 5 Core Hackathon Discussion on Testing|https://github.com/p5h/2017/wiki/What-Do-We-Want-and-Need-from-Smoke-Testing%3F>.
+
+L<perl.cpan.testers.discuss Thread on Testing|https://www.nntp.perl.org/group/perl.cpan.testers.discuss/2017/10/msg4172.html>.
+
+=cut
 

@@ -7,7 +7,7 @@ WriteMakefile(
     NAME         => 'Test::Against::Dev',
     VERSION_FROM => 'lib/Test/Against/Dev.pm',
     AUTHOR       => 'James E Keenan (jkeenan@cpan.org)',
-    ABSTRACT     => 'Functions for testing modules against blead, a branch or a dev release',
+    ABSTRACT     => 'Test CPAN modules against Perl dev releases',
     PREREQ_PM    => {
                     # core
                     'Carp'                              => 0,
