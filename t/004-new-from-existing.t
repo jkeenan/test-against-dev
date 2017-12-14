@@ -247,11 +247,11 @@ SKIP: {
 
     {
         local $@;
-        my $file = catfile('t', 'data', 'two-modules.txt');
+        my $file = catfile('t', 'data', 'four-modules.txt');
         ok(-f $file, "Located $file for testing");
         $gzipped_build_log = $self->run_cpanm( {
             module_file => $file,
-            title       => 'two-modules-one-likely-to-fail',
+            title       => 'four-modules-one-likely-to-fail',
             verbose     => 1,
         } );
         unless ($@) {
