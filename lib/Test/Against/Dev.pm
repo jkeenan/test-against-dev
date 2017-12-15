@@ -608,6 +608,7 @@ sub new_from_existing_perl_cpanm {
 
     # TODO: Check $args->{perl_version} against pattern.
     # TODO: Create $args->{results_dir} if it doesn't already exist.
+    # TODO: Add a dryrun parameter?
     #
     # Is the perl's parent directory bin/?
     # Is there a lib/ directory next to parent bin/?
