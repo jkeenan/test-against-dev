@@ -28,7 +28,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( [
             path_to_perl    => $tdir,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         ] );
     };
@@ -44,8 +44,8 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
             perl_version    => $perl_version,
         } );
     };
-    like($@, qr/Need 'results_dir' element in arguments hash ref/,
-            "Got expected error message: no value supplied for 'results_dir'");
+    like($@, qr/Need 'application_dir' element in arguments hash ref/,
+            "Got expected error message: no value supplied for 'application_dir'");
 }
 
 {
@@ -53,7 +53,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $tdir,
-            results_dir     => $tdir,
+            application_dir => $tdir,
         } );
     };
     like($@, qr/Need 'perl_version' element in arguments hash ref/,
@@ -65,7 +65,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path => $tdir,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -81,7 +81,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -95,7 +95,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -109,7 +109,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -125,7 +125,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -141,7 +141,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -157,7 +157,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -175,7 +175,7 @@ ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
     eval {
         $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
             path_to_perl    => $path_to_perl,
-            results_dir     => $tdir,
+            application_dir => $tdir,
             perl_version    => $perl_version,
         } );
     };
@@ -189,7 +189,8 @@ note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against ins
     unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
 SKIP: {
-    skip 'Test assumes installed perl and cpanm', 8
+    #skip 'Test assumes installed perl and cpanm', 8
+    skip 'Test assumes installed perl and cpanm', 10
         unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
     my $good_path = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
@@ -201,7 +202,7 @@ SKIP: {
         eval {
             $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
                 path_to_perl    => $good_path,
-                results_dir     => $tdir,
+                application_dir => $tdir,
                 perl_version    => $bad_perl_version,
             } );
         };
@@ -210,9 +211,26 @@ SKIP: {
     }
 
     my ($perl_version) = $good_path =~ s{^.*/([^/]*?)/bin/perl$}{$1}r;
+
+    {
+        local $@;
+        my $bad_application_dir = catdir('foo', 'bar');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $good_path,
+                application_dir => $bad_application_dir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Could not locate $bad_application_dir/,
+            "Got expected error message: Could not locate path '$bad_application_dir'");
+    }
+
+    # First test expected to PASS with real values
+
     $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
         path_to_perl    => $good_path,
-        results_dir     => $tdir,
+        application_dir => $tdir,
         perl_version    => $perl_version,
     } );
     ok(defined $self, "new_from_existing_perl_cpanm() returned defined value");
@@ -234,22 +252,22 @@ SKIP: {
     pp({ %{$self} });
     note("Status");
 
-    my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
-    my $gzipped_build_log;
-    note("Expecting to log cpanm in $expected_log");
-    {
-        local $@;
-        my $mod = 'Module::Build';
-        my $list = [ $mod ];
-        eval {
-            $self->run_cpanm( { module_list => $list, verbose => 1 } );
-        };
-        like($@, qr/Must supply value for 'title' element/,
-            "Got expected failure message for lack of 'title' element");
-    }
+#    my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
+#    my $gzipped_build_log;
+#    note("Expecting to log cpanm in $expected_log");
+#    {
+#        local $@;
+#        my $mod = 'Module::Build';
+#        my $list = [ $mod ];
+#        eval {
+#            $self->run_cpanm( { module_list => $list, verbose => 1 } );
+#        };
+#        like($@, qr/Must supply value for 'title' element/,
+#            "Got expected failure message for lack of 'title' element");
+#    }
 
     # PROBLEM: The tests in the next two blocks install real CPAN modules --
-    # i.e., those we want to track in production -- underneath 
+    # i.e., those we want to track in production -- underneath
     # the application_dir implied in $good_path.
     # So, if $good_path is /home/jkeenan/tmp/perl-5.27.0/bin/perl,
     # Module::Build, et. al., will be installed under
@@ -261,53 +279,53 @@ SKIP: {
     # POSSIBLE SOLUTION: Create a tarball of dummy modules and use its path as
     # the argument to cpanm.
 
-    {
-        local $@;
-        my $mod = 'Module::Build';
-        my $list = [ $mod ];
-        $gzipped_build_log = $self->run_cpanm( {
-            module_list => $list,
-            title       => 'just-one-module',
-            verbose     => 1,
-        } );
-        if ($@) { fail("run_cpanm failed to install $mod"); }
-        else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
-        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-    }
-
-    {
-        local $@;
-        my $file = catfile('t', 'data', 'four-modules.txt');
-        ok(-f $file, "Located $file for testing");
-        $gzipped_build_log = $self->run_cpanm( {
-            module_file => $file,
-            title       => 'four-modules-one-likely-to-fail',
-            verbose     => 1,
-        } );
-        unless ($@) {
-            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
-        }
-        else {
-            fail("run_cpanm did not operate as intended");
-        }
-        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-    }
-
-    my $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
-    ok(-d $ranalysis_dir,
-        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
-
-    my $rv;
-    {
-        local $@;
-        eval { $rv = $self->analyze_json_logs( run => 1, verbose => 1 ); };
-        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
-            "Got expected error message: absence of hash ref");
-    }
-
-    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
-    ok($fpsvfile, "analyze_json_logs() returned true value");
-    ok(-f $fpsvfile, "Located '$fpsvfile'");
+#    {
+#        local $@;
+#        my $mod = 'Module::Build';
+#        my $list = [ $mod ];
+#        $gzipped_build_log = $self->run_cpanm( {
+#            module_list => $list,
+#            title       => 'just-one-module',
+#            verbose     => 1,
+#        } );
+#        if ($@) { fail("run_cpanm failed to install $mod"); }
+#        else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
+#        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+#    }
+#
+#    {
+#        local $@;
+#        my $file = catfile('t', 'data', 'four-modules.txt');
+#        ok(-f $file, "Located $file for testing");
+#        $gzipped_build_log = $self->run_cpanm( {
+#            module_file => $file,
+#            title       => 'four-modules-one-likely-to-fail',
+#            verbose     => 1,
+#        } );
+#        unless ($@) {
+#            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
+#        }
+#        else {
+#            fail("run_cpanm did not operate as intended");
+#        }
+#        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+#    }
+#
+#    my $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
+#    ok(-d $ranalysis_dir,
+#        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
+#
+#    my $rv;
+#    {
+#        local $@;
+#        eval { $rv = $self->analyze_json_logs( run => 1, verbose => 1 ); };
+#        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
+#            "Got expected error message: absence of hash ref");
+#    }
+#
+#    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
+#    ok($fpsvfile, "analyze_json_logs() returned true value");
+#    ok(-f $fpsvfile, "Located '$fpsvfile'");
 }
 
 # Try to ensure that we get back to where we started so that tempdirs can be

@@ -256,9 +256,13 @@ sub perform_tarball_download {
     croak "Could not locate '$args->{work_dir}' for purpose of downloading tarball and building perl"
         if (exists $args->{work_dir} and (! -d $args->{work_dir}));
 
-    $self->{$_} = $args->{$_} for keys %$args;
+    # host, hostdir, compression are only used within the scope of this method
+    # hence don't need to be inserted into object
+    for my $k ( qw| perl_version work_dir | ) {
+        $self->{$k} = $args->{$k};
+    }
 
-    $self->{tarball} = "$self->{perl_version}.tar.$self->{compression}";
+    my $this_tarball = "$self->{perl_version}.tar.$args->{compression}";
 
     my $this_release_dir = File::Spec->catdir($self->get_testing_dir(), $self->{perl_version});
     unless (-d $this_release_dir) { make_path($this_release_dir, { mode => 0755 }); }
@@ -266,8 +270,8 @@ sub perform_tarball_download {
     $self->{release_dir} = $this_release_dir;
 
     my $ftpobj = Perl::Download::FTP->new( {
-        host        => $self->{host},
-        dir         => $self->{hostdir},
+        host        => $args->{host},
+        dir         => $args->{hostdir},
         Passive     => 1,
         verbose     => $verbose,
     } );
@@ -282,7 +286,7 @@ sub perform_tarball_download {
             say "Perl configure-build-install cycle will be performed in $self->{work_dir}";
         }
         my $tarball_path = $ftpobj->get_specific_release( {
-            release         => $self->{tarball},
+            release         => $this_tarball,
             path            => $self->{work_dir},
         } );
         unless (-f $tarball_path) {
@@ -650,7 +654,7 @@ sub new_from_existing_perl_cpanm {
     croak "new_from_existing_perl_cpanm: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
-    for my $el ( qw| path_to_perl results_dir perl_version | ) {
+    for my $el ( qw| path_to_perl application_dir perl_version | ) {
         croak "Need '$el' element in arguments hash ref"
             unless exists $args->{$el};
     }
@@ -658,11 +662,24 @@ sub new_from_existing_perl_cpanm {
         unless (-x $args->{path_to_perl} and basename($args->{path_to_perl}) =~ m/^perl/);
 
     my $data = { perl_version_pattern => $PERL_VERSION_PATTERN };
+
     croak "'$args->{perl_version}' does not conform to pattern"
         unless $args->{perl_version} =~ m/$data->{perl_version_pattern}/;
+    $data->{perl_version} = $args->{perl_version};
+
     my $this_perl = $args->{path_to_perl};
 
-    # TODO: Create $args->{results_dir} if it doesn't already exist.
+    croak "Could not locate $args->{application_dir}"
+        unless (-d $args->{application_dir});
+    $data->{application_dir} = $args->{application_dir};
+
+    for my $dir (qw| testing results |) {
+        my $fdir = File::Spec->catdir($data->{application_dir}, $dir);
+        unless (-d $fdir) { make_path($fdir, { mode => 0755 }); }
+        croak "Could not locate $fdir" unless (-d $fdir);
+        $data->{"${dir}_dir"} = $fdir;
+    }
+
     # TODO: Add a dryrun parameter?
     #
     # Is the perl's parent directory bin/?
@@ -692,8 +709,6 @@ sub new_from_existing_perl_cpanm {
         unless (-x $this_cpanm);
 
     my %load = (
-        perl_version    => $args->{perl_version},
-        results_dir     => $args->{results_dir},
         release_dir     => $release_dir,
         bin_dir         => $bin_dir,
         lib_dir         => $lib_dir,
