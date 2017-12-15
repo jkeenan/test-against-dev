@@ -1,7 +1,7 @@
 package Test::Against::Dev;
 use strict;
 use 5.10.1;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 use Carp;
 use Cwd;
 use File::Basename;
@@ -10,8 +10,8 @@ use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir tempfile | );
 use Archive::Tar;
-use Data::Dump ( qw| dd pp | );
 use CPAN::cpanminus::reporter::RetainReports;
+use Data::Dump ( qw| dd pp | );
 use JSON;
 use Path::Tiny;
 use Perl::Download::FTP;
@@ -214,7 +214,7 @@ sub new {
     }
 
     $data->{perl_version_pattern} = $PERL_VERSION_PATTERN;
-    
+
     return bless $data, $class;
 }
 
@@ -721,9 +721,9 @@ sub new_from_existing_perl_cpanm {
 }
 
 sub analyze_cpanm_build_logs {
-    my ($self, $args) = shift;
+    my ($self, $args) = @_;
     $args //= {};
-    croak "perform_tarball_download: Must supply hash ref as argument"
+    croak "analyze_cpanm_build_logs: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
     my $dryrun  = delete $args->{dryrun} || '';
@@ -772,12 +772,14 @@ sub analyze_json_logs {
         unless (defined $args->{run} and length($args->{run}));
     my $srun = sprintf("%02d" => $args->{run});
 
+    # As a precaution, we archive the log.json files.
+
     my $output = join('.' => (
         $self->{title},
         $self->{perl_version},
         $srun,
-        'build',
         'log',
+        'json',
         'gz'
     ) );
     my $foutput = File::Spec->catfile($self->{storage_dir}, $output);
@@ -800,6 +802,9 @@ sub analyze_json_logs {
     $tar->write($foutput, COMPRESS_GZIP);
     croak "$foutput not created" unless (-f $foutput);
     say "Created $foutput" if $verbose;
+
+    # Having archives our log.json files, we now proceed to read them and to
+    # write a pipe-separated-values file summarizing the run.
 
     my %data = ();
     for my $log (@json_log_files) {

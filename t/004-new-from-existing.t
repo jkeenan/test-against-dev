@@ -10,7 +10,7 @@ use Cwd;
 use File::Basename;
 use File::Spec::Functions ( qw| catdir catfile | );
 use File::Path ( qw| make_path | );
-use File::Temp ( qw| tempdir |);
+use File::Temp ( qw| tempdir tempfile |);
 use Data::Dump ( qw| dd pp | );
 use Test::RequiresInternet ('ftp.funet.fi' => 21);
 use Test::Against::Dev;
@@ -20,167 +20,175 @@ my $perl_version = 'perl-5.27.4';
 
 my $cwd = cwd();
 my $tdir = tempdir(CLEANUP => 1);
-#my $tdir = '/home/jkeenan/tmp/bbc/results';
-ok(create_sample_files($tdir), "Sample files created for testing in $tdir");
+#my $tdir = '/home/jkeenan/var/tad';
 
 {
-    local $@;
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( [
-            path_to_perl    => $tdir,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        ] );
-    };
-    like($@, qr/new_from_existing_perl_cpanm: Must supply hash ref as argument/,
-            "Got expected error message: absence of hashref");
-}
+    note("Tests of error conditions:  defects in call syntax");
+    {
+        local $@;
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( [
+                path_to_perl    => $tdir,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            ] );
+        };
+        like($@, qr/new_from_existing_perl_cpanm: Must supply hash ref as argument/,
+                "new_from_existing_perl_cpanm(): Got expected error message: absence of hash ref");
+    }
 
-{
-    local $@;
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Need 'application_dir' element in arguments hash ref/,
-            "Got expected error message: no value supplied for 'application_dir'");
-}
+    {
+        local $@;
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Need 'application_dir' element in arguments hash ref/,
+                "new_from_existing_perl_cpanm(): Got expected error message: no value supplied for 'application_dir'");
+    }
 
-{
-    local $@;
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $tdir,
-            application_dir => $tdir,
-        } );
-    };
-    like($@, qr/Need 'perl_version' element in arguments hash ref/,
-            "Got expected error message: no value supplied for 'perl_version'");
-}
+    {
+        local $@;
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $tdir,
+                application_dir => $tdir,
+            } );
+        };
+        like($@, qr/Need 'perl_version' element in arguments hash ref/,
+                "new_from_existing_perl_cpanm(): Got expected error message: no value supplied for 'perl_version'");
+    }
 
-{
-    local $@;
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path => $tdir,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Need 'path_to_perl' element in arguments hash ref/,
-        "Got expected error message: lack 'path_to_perl' element in hash ref");
+    {
+        local $@;
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path => $tdir,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Need 'path_to_perl' element in arguments hash ref/,
+            "new_from_existing_perl_cpanm(): Got expected error message: lack 'path_to_perl' element in hash ref");
+    }
 }
 
 ####################
 
 {
-    local $@;
-    my $path_to_perl = catfile($tdir, 'foo', 'bar');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Could not locate perl executable at '$path_to_perl'/,
-        "Got expected error message: value for 'path_to_perl' not named perl");
-}
+    note("Tests of error conditions:  defects in directory and file structure");
 
-{
-    local $@;
-    my $path_to_perl = catfile($tdir, 'foo', 'perl');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Could not locate perl executable at '$path_to_perl'/,
-        "Got expected error message: '$path_to_perl' is not executable");
-}
+    my $sampledir = tempdir (CLEANUP => 1);
+    ok(create_sample_files($sampledir), "Sample files created for testing in $sampledir");
+    {
+        local $@;
+        my $path_to_perl = catfile($sampledir, 'foo', 'bar');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Could not locate perl executable at '$path_to_perl'/,
+            "Got expected error message: value for 'path_to_perl' not named perl");
+    }
 
-{
-    local $@;
-    my $path_to_perl = catfile($tdir, 'baz', 'perl');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr<'$path_to_perl' not found in directory named 'bin/'>,
-        "Got expected error message: '$path_to_perl' not in directory 'bin/'");
-}
+    {
+        local $@;
+        my $path_to_perl = catfile($sampledir, 'foo', 'perl');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Could not locate perl executable at '$path_to_perl'/,
+            "Got expected error message: '$path_to_perl' is not executable");
+    }
 
-{
-    local $@;
-    my $d = catfile($tdir, 'bom');
-    my $e = catdir($d, 'lib');
-    my $path_to_perl = catfile($d, 'bin', 'perl');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Could not locate '$e'/,
-        "Got expected error message: Could not locate appropriate 'lib/' directory");
-}
+    {
+        local $@;
+        my $path_to_perl = catfile($sampledir, 'baz', 'perl');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr<'$path_to_perl' not found in directory named 'bin/'>,
+            "Got expected error message: '$path_to_perl' not in directory 'bin/'");
+    }
 
-{
-    local $@;
-    my $d = catfile($tdir, 'boo');
-    my $e = catdir($d, 'lib');
-    my $path_to_perl = catfile($d, 'bin', 'perl');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/'$e' not writable/,
-        "Got expected error message: '$e' not writable");
-}
+    {
+        local $@;
+        my $d = catfile($sampledir, 'bom');
+        my $e = catdir($d, 'lib');
+        my $path_to_perl = catfile($d, 'bin', 'perl');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Could not locate '$e'/,
+            "Got expected error message: Could not locate appropriate 'lib/' directory");
+    }
 
-{
-    local $@;
-    my $d = catfile($tdir, 'boq');
-    my $e = catdir($d, 'lib');
-    my $path_to_perl = catfile($d, 'bin', 'perl');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/'$d' not writable/,
-        "Got expected error message: '$d' not writable");
-}
+    {
+        local $@;
+        my $d = catfile($sampledir, 'boo');
+        my $e = catdir($d, 'lib');
+        my $path_to_perl = catfile($d, 'bin', 'perl');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/'$e' not writable/,
+            "Got expected error message: '$e' not writable");
+    }
 
-{
-    local $@;
-    my $d = catfile($tdir, 'bos');
-    my $e = catdir($d, 'lib');
-    my $bin_dir = catfile($d, 'bin');
-    my $path_to_perl = catfile($bin_dir, 'perl');
-    my $path_to_cpanm = catfile($bin_dir, 'cpanm');
-    eval {
-        $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-            path_to_perl    => $path_to_perl,
-            application_dir => $tdir,
-            perl_version    => $perl_version,
-        } );
-    };
-    like($@, qr/Could not locate cpanm executable at '$path_to_cpanm'/,
-        "Got expected error message: Could not locate an executable 'cpanm' at '$path_to_cpanm'");
+    {
+        local $@;
+        my $d = catfile($sampledir, 'boq');
+        my $e = catdir($d, 'lib');
+        my $path_to_perl = catfile($d, 'bin', 'perl');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/'$d' not writable/,
+            "Got expected error message: '$d' not writable");
+    }
+
+    {
+        local $@;
+        my $d = catfile($sampledir, 'bos');
+        my $e = catdir($d, 'lib');
+        my $bin_dir = catfile($d, 'bin');
+        my $path_to_perl = catfile($bin_dir, 'perl');
+        my $path_to_cpanm = catfile($bin_dir, 'cpanm');
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $path_to_perl,
+                application_dir => $tdir,
+                perl_version    => $perl_version,
+            } );
+        };
+        like($@, qr/Could not locate cpanm executable at '$path_to_cpanm'/,
+            "Got expected error message: Could not locate an executable 'cpanm' at '$path_to_cpanm'");
+    }
 }
 
 ####################
@@ -250,7 +258,6 @@ SKIP: {
     is($this_cpanm, catfile($bin_dir, 'cpanm'), "Got expected 'cpanm': $this_cpanm");
 
     pp({ %{$self} });
-    note("Status");
 
     my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
     my $gzipped_build_log;
@@ -266,66 +273,81 @@ SKIP: {
             "Got expected failure message for lack of 'title' element");
     }
 
-    # PROBLEM: The tests in the next two blocks install real CPAN modules --
-    # i.e., those we want to track in production -- underneath
-    # the application_dir implied in $good_path.
-    # So, if $good_path is /home/jkeenan/tmp/perl-5.27.0/bin/perl,
-    # Module::Build, et. al., will be installed under
-    # /home/jkeenan/tmp/perl-5.27.0/lib -- but without being recorded in a
-    # non-temporary cpanm build.log.  Hence, the fact that they PASSed or
-    # FAILed will not be detected by the subsequent methods which presume an
-    # accurate build.log.
+    {
+        note("Testing via 'module_list'");
+        local $@;
+        my $list = [
+            map { catfile($cwd, 't', 'data', $_) }
+            ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+        ];
+        #pp($list);
 
-    # POSSIBLE SOLUTION: Create a tarball of dummy modules and use its path as
-    # the argument to cpanm.
+        # TODO: Add tests which capture verbose output and match it against
+        # expectations.
 
-#    {
-#        local $@;
-#        my $mod = 'Module::Build';
-#        my $list = [ $mod ];
-#        $gzipped_build_log = $self->run_cpanm( {
-#            module_list => $list,
-#            title       => 'just-one-module',
-#            verbose     => 1,
-#        } );
-#        if ($@) { fail("run_cpanm failed to install $mod"); }
-#        else { pass("run_cpanm installed $mod (or reported that it was already installed)"); }
-#        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-#    }
-#
-#    {
-#        local $@;
-#        my $file = catfile('t', 'data', 'four-modules.txt');
-#        ok(-f $file, "Located $file for testing");
-#        $gzipped_build_log = $self->run_cpanm( {
-#            module_file => $file,
-#            title       => 'four-modules-one-likely-to-fail',
-#            verbose     => 1,
-#        } );
-#        unless ($@) {
-#            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
-#        }
-#        else {
-#            fail("run_cpanm did not operate as intended");
-#        }
-#        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-#    }
-#
-#    my $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
-#    ok(-d $ranalysis_dir,
-#        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
-#
-#    my $rv;
-#    {
-#        local $@;
-#        eval { $rv = $self->analyze_json_logs( run => 1, verbose => 1 ); };
-#        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
-#            "Got expected error message: absence of hash ref");
-#    }
-#
-#    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
-#    ok($fpsvfile, "analyze_json_logs() returned true value");
-#    ok(-f $fpsvfile, "Located '$fpsvfile'");
+        $gzipped_build_log = $self->run_cpanm( {
+            module_list => $list,
+            title       => 'one-pass-one-fail',
+            verbose     => 1,
+        } );
+        unless ($@) {
+            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
+        }
+        else {
+            fail("run_cpanm did not operate as intended");
+        }
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+    }
+
+    {
+        note("Testing via 'module_file'");
+        local $@;
+        my $list = [
+            map { catfile($cwd, 't', 'data', $_) }
+            ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+        ];
+        my ($IN, $file) = tempfile();
+        open $IN, '>', $file or croak "Could not open $file for writing";
+        say $IN $_ for @{$list};
+        close $IN or croak "Could not close $file after writing";
+        ok(-f $file, "Located $file for testing");
+        $gzipped_build_log = $self->run_cpanm( {
+            module_file => $file,
+            title       => 'second-one-pass-one-fail',
+            verbose     => 1,
+        } );
+        unless ($@) {
+            pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
+        }
+        else {
+            fail("run_cpanm did not operate as intended");
+        }
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+    }
+
+    my $ranalysis_dir;
+    {
+        local $@;
+        eval { $ranalysis_dir = $self->analyze_cpanm_build_logs( [ verbose => 1 ] ); };
+        like($@, qr/analyze_cpanm_build_logs: Must supply hash ref as argument/,
+            "analyze_cpanm_build_logs(): Got expected error message for lack of hash ref");
+    }
+
+    $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
+    ok(-d $ranalysis_dir,
+        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
+
+    my $rv;
+    {
+        local $@;
+        eval { $rv = $self->analyze_json_logs( run => 1, verbose => 1 ); };
+        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
+            "analyze_json_logs(): Got expected error message: absence of hash ref");
+    }
+
+    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
+    ok($fpsvfile, "analyze_json_logs() returned true value");
+    ok(-f $fpsvfile, "Located '$fpsvfile'");
 }
 
 # Try to ensure that we get back to where we started so that tempdirs can be

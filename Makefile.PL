@@ -18,7 +18,7 @@ WriteMakefile(
                     'File::Temp'                        => 0,
                     # non-core
                     'Archive::Tar'                      => 0,
-                    'CPAN::cpanminus::reporter::RetainReports' => 0.04,
+                    'CPAN::cpanminus::reporter::RetainReports' => 0.05,
                     'Data::Dump'                        => 0,
                     'JSON'                              => 0,
                     'Path::Tiny'                        => 0,
