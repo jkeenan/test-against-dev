@@ -606,6 +606,9 @@ sub new_from_existing_perl_cpanm {
 
     my $this_perl = $args->{path_to_perl};
 
+    # TODO: Check $args->{perl_version} against pattern.
+    # TODO: Create $args->{results_dir} if it doesn't already exist.
+    #
     # Is the perl's parent directory bin/?
     # Is there a lib/ directory next to parent bin/?
     # Can the user write to directory lib/?
@@ -686,18 +689,6 @@ sub analyze_cpanm_build_logs {
     say "See results in $ranalysis_dir" if $verbose;
     return $ranalysis_dir;
 }
-
-=pod
-
-    perl analyze-json-logs.pl \
-        --resultsdir=/home/jkeenan/var/bbc/results \
-        --perlversion=perl-5.27.0 \
-        --stream_size=1000 \
-        --datestamp=20171203 \
-        --run=1 \
-        --verbose
-
-=cut
 
 sub analyze_json_logs {
     my ($self, $args) = @_;
