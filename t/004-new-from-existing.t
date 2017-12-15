@@ -252,19 +252,19 @@ SKIP: {
     pp({ %{$self} });
     note("Status");
 
-#    my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
-#    my $gzipped_build_log;
-#    note("Expecting to log cpanm in $expected_log");
-#    {
-#        local $@;
-#        my $mod = 'Module::Build';
-#        my $list = [ $mod ];
-#        eval {
-#            $self->run_cpanm( { module_list => $list, verbose => 1 } );
-#        };
-#        like($@, qr/Must supply value for 'title' element/,
-#            "Got expected failure message for lack of 'title' element");
-#    }
+    my $expected_log = catfile($self->get_release_dir(), '.cpanm', 'build.log');
+    my $gzipped_build_log;
+    note("Expecting to log cpanm in $expected_log");
+    {
+        local $@;
+        my $mod = 'Module::Build';
+        my $list = [ $mod ];
+        eval {
+            $self->run_cpanm( { module_list => $list, verbose => 1 } );
+        };
+        like($@, qr/Must supply value for 'title' element/,
+            "Got expected failure message for lack of 'title' element");
+    }
 
     # PROBLEM: The tests in the next two blocks install real CPAN modules --
     # i.e., those we want to track in production -- underneath
