@@ -194,6 +194,21 @@ SKIP: {
 
     my $good_path = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
     croak "Could not locate '$good_path'" unless (-x $good_path);
+
+    {
+        local $@;
+        my $bad_perl_version = '5.27.3';
+        eval {
+            $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+                path_to_perl    => $good_path,
+                results_dir     => $tdir,
+                perl_version    => $bad_perl_version,
+            } );
+        };
+        like($@, qr/'$bad_perl_version' does not conform to pattern/,
+            "Got expected error message: '$bad_perl_version' does not conform to pattern");
+    }
+
     my ($perl_version) = $good_path =~ s{^.*/([^/]*?)/bin/perl$}{$1}r;
     $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
         path_to_perl    => $good_path,
@@ -232,6 +247,19 @@ SKIP: {
         like($@, qr/Must supply value for 'title' element/,
             "Got expected failure message for lack of 'title' element");
     }
+
+    # PROBLEM: The tests in the next two blocks install real CPAN modules --
+    # i.e., those we want to track in production -- underneath 
+    # the application_dir implied in $good_path.
+    # So, if $good_path is /home/jkeenan/tmp/perl-5.27.0/bin/perl,
+    # Module::Build, et. al., will be installed under
+    # /home/jkeenan/tmp/perl-5.27.0/lib -- but without being recorded in a
+    # non-temporary cpanm build.log.  Hence, the fact that they PASSed or
+    # FAILed will not be detected by the subsequent methods which presume an
+    # accurate build.log.
+
+    # POSSIBLE SOLUTION: Create a tarball of dummy modules and use its path as
+    # the argument to cpanm.
 
     {
         local $@;

@@ -159,9 +159,29 @@ TK
 
 =item * Purpose
 
+Test::Against::Dev constructor.  Guarantees that the top-level directory for
+the application exists, then creates two directories thereunder:  C<testing/>
+and C<results/>.
+
 =item * Arguments
 
+    $self = Test::Against::Dev->new( {
+        application_dir         => '/path/to/application',
+    } );
+
+Takes a hash reference with the following elements:
+
+=over 4
+
+=item * C<application_dir>
+
+String holding path to the directory which will serve as the top level for your application.
+
+=back
+
 =item * Return Value
+
+Test::Against::Dev object.
 
 =item * Comment
 
@@ -169,11 +189,7 @@ TK
 
 =cut
 
-# What args must be passed to constructor?
-# application top-level directory
-# Constructor will get path to top-level directory for application,
-# compose names of other directories in the tree, verify they exist or create
-# them as needed.
+our $PERL_VERSION_PATTERN = qr/^perl-5\.\d+\.\d{1,2}$/;
 
 sub new {
     my ($class, $args) = @_;
@@ -197,7 +213,8 @@ sub new {
         $data->{"${dir}_dir"} = $fdir;
     }
 
-    $data->{perl_version_pattern} = qr/^perl-5\.\d+\.\d{1,2}$/;
+    $data->{perl_version_pattern} = $PERL_VERSION_PATTERN;
+    
     return bless $data, $class;
 }
 
@@ -591,6 +608,42 @@ sub gzip_cpanm_build_log {
     $self->{gzlog} = $gzlog;
 }
 
+=head2 C<new_from_existing_perl_cpanm()>
+
+=over 4
+
+=item * Purpose
+
+Alternate constructor to be used when you have already built a C<perl> executable to be used in tracking Perl development and installed a C<cpanm> against that C<perl>.
+
+=item * Arguments
+
+    $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
+        path_to_perl    => $good_path,
+        results_dir     => $tdir,
+        perl_version    => $perl_version,
+    } );
+
+Takes a hash reference with the following elements:
+
+=over 4
+
+=item *
+
+=item *
+
+=back
+
+=item * Return Value
+
+Test::Against::Dev object.
+
+=item * Comment
+
+=back
+
+=cut
+
 sub new_from_existing_perl_cpanm {
     my ($class, $args) = @_;
     $args //= {};
@@ -604,9 +657,11 @@ sub new_from_existing_perl_cpanm {
     croak "Could not locate perl executable at '$args->{path_to_perl}'"
         unless (-x $args->{path_to_perl} and basename($args->{path_to_perl}) =~ m/^perl/);
 
+    my $data = { perl_version_pattern => $PERL_VERSION_PATTERN };
+    croak "'$args->{perl_version}' does not conform to pattern"
+        unless $args->{perl_version} =~ m/$data->{perl_version_pattern}/;
     my $this_perl = $args->{path_to_perl};
 
-    # TODO: Check $args->{perl_version} against pattern.
     # TODO: Create $args->{results_dir} if it doesn't already exist.
     # TODO: Add a dryrun parameter?
     #
@@ -636,7 +691,7 @@ sub new_from_existing_perl_cpanm {
     croak "Could not locate cpanm executable at '$this_cpanm'"
         unless (-x $this_cpanm);
 
-    my $data = {
+    my %load = (
         perl_version    => $args->{perl_version},
         results_dir     => $args->{results_dir},
         release_dir     => $release_dir,
@@ -644,7 +699,8 @@ sub new_from_existing_perl_cpanm {
         lib_dir         => $lib_dir,
         this_perl       => $this_perl,
         this_cpanm      => $this_cpanm,
-    };
+    );
+    $data->{$_} = $load{$_} for keys %load;
 
     return bless $data, $class;
 }
