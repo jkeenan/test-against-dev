@@ -27,6 +27,28 @@ Test::Against::Dev - Test CPAN modules against Perl dev releases
         application_dir => $application_dir,
     } );
 
+    my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
+        host                => 'ftp.funet.fi',
+        hostdir             => /pub/languages/perl/CPAN/src/5.0,
+        perl_version        => 'perl-5.27.6',
+        compression         => 'gz',
+        work_dir            => "~/tmp/Downloads",
+        verbose             => 1,
+        mock                => 0,
+    } );
+
+    my $this_perl = $self->configure_build_install_perl({
+        verbose => 1,
+    });
+
+    my $this_cpanm = $self->fetch_cpanm( { verbose => 1 } );
+
+    my $gzipped_build_log = $self->run_cpanm( {
+        module_file => '/path/to/cpan-river-file.txt',
+        title       => 'cpan-river-1000',
+        verbose     => 1,
+    } );
+
 =head1 DESCRIPTION
 
 =head2 Who Should Use This Library?
@@ -342,7 +364,6 @@ below which a new F<perl> will be installed.
 
 =cut
 
-
 sub perform_tarball_download {
     my ($self, $args) = @_;
     croak "perform_tarball_download: Must supply hash ref as argument"
@@ -468,8 +489,6 @@ Configures, builds and installs F<perl> from the downloaded tarball.
 Hash reference with the following elements:
 
 =over 4
-
-    my $mic = $self->access_make_install_command($args->{make_install_command} || '');
 
 =item * C<configure_command>
 
@@ -607,10 +626,53 @@ sub get_lib_dir {
     }
 }
 
+=head2 C<fetch_cpanm()>
+
+=over 4
+
+=item * Purpose
+
+Fetch the fatpacked F<cpanm> executable and install it against the newly
+installed F<perl>.
+
+=item * Arguments
+
+    my $this_cpanm = $self->fetch_cpanm( { verbose => 1 } );
+
+Hash reference with these elements:
+
+=over 4
+
+=item * C<uri>
+
+String holding URI from which F<cpanm> will be downloaded.  Optional; defaults to L<http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.7043/bin/cpanm>.
+
+=item * C<verbose>
+
+Extra information provided on STDOUT.  Optional; defaults to being off;
+provide a Perl-true value to turn it on.  Scope is limited to this method.
+
+=back
+
+=item * Return Value
+
+String holding the absolute path to the newly installed F<cpanm> executable.
+
+=item * Comment
+
+The executable's location can subsequently be accessed by calling
+C<$self->get_this_cpanm()>.  The method also guarantees the existence of a
+F<.cpanm> directory underneath the release directory.  This directory can
+subsequently be accessed by calling C<$self->get_cpanm_dir()>.
+
+=back
+
+=cut
+
 sub fetch_cpanm {
     my ($self, $args) = @_;
     $args //= {};
-    croak "perform_tarball_download: Must supply hash ref as argument"
+    croak "fetch_cpanm: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
     my $uri = (exists $args->{uri} and length $args->{uri})
@@ -634,7 +696,7 @@ sub fetch_cpanm {
         chomp $_;
         say $OUT $_;
     }
-    close $OUT or croak "Unalbe to close $this_cpanm after writing";
+    close $OUT or croak "Unable to close $this_cpanm after writing";
     close $IN or croak "Unable to close scalar after reading";
     unless (-f $this_cpanm) {
         croak "Unable to locate '$this_cpanm'";
@@ -683,6 +745,88 @@ sub setup_results_directories {
     $self->{storage_dir} = $storage_dir;
     return scalar(@created);
 }
+
+=head2 C<run_cpanm()>
+
+=over 4
+
+=item * Purpose
+
+Use F<cpanm> to install selected Perl modules against the F<perl> built for
+testing purposes.
+
+=item * Arguments
+
+Two mutually exclusive interfaces:
+
+=over 4
+
+=item * Modules provided in a list
+
+    $gzipped_build_log = $self->run_cpanm( {
+        module_list => [ 'DateTime', 'AnyEvent' ],
+        title       => 'two-important-libraries',
+        verbose     => 1,
+    } );
+
+=item * Modules listed in a file
+
+    $gzipped_build_log = $self->run_cpanm( {
+        module_file => '/path/to/cpan-river-file.txt',
+        title       => 'cpan-river-1000',
+        verbose     => 1,
+    } );
+
+=back
+
+Each interface takes a hash reference with the following elements:
+
+=over 4
+
+=item * C<module_list> B<OR> C<module_file>
+
+Mutually exclusive; must use one or the other but not both.
+
+The value of C<module_list> must be an array reference holding a list of
+modules for which you wish to track the impact of changes in the Perl 5 core
+distribution over time.  In either case the module names are spelled in
+C<Some::Module> format -- I<i.e.>, double-colons -- rather than in
+C<Some-Module> format (hyphens).
+
+=item * C<title>
+
+String which will be used to compose the name of project-specific output
+files.  Required.
+
+=item * C<verbose>
+
+Extra information provided on STDOUT.  Optional; defaults to being off;
+provide a Perl-true value to turn it on.  Scope is limited to this method.
+
+=back
+
+=item * Return Value
+
+String holding the absolute path of a gzipped copy of the F<build.log>
+generated by the F<cpanm> run which this method conducts.  The basename
+of this file, using the arguments supplied, would be:
+
+   cpan-river-1000.perl-5.27.6.01.build.log.gz
+
+=item * Comment
+
+The method guarantees the existence of several directories underneath the
+"results" directory discussed above.  These are illustrated as follows:
+
+    /path/to/application/results/
+                        /results/perl-5.27.6/
+                        /results/perl-5.27.6/analysis/
+                        /results/perl-5.27.6/buildlogs/
+                        /results/perl-5.27.6/storage/
+
+=back
+
+=cut
 
 sub run_cpanm {
     my ($self, $args) = @_;
@@ -767,9 +911,11 @@ sub gzip_cpanm_build_log {
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
+
     # Read the directory holding gzipped build.logs.  If there are no files
     # whose names match the pattern, then set $run to 01.  If there are,
     # determine the next appropriate run number.
+
     my $pattern = qr/^$self->{title}\.$self->{perl_version}\.(\d{2})\.build\.log\.gz$/;
     $self->{gzlog_pattern} = $pattern;
     opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
@@ -796,7 +942,9 @@ sub gzip_cpanm_build_log {
 
 =item * Purpose
 
-Alternate constructor to be used when you have already built a C<perl> executable to be used in tracking Perl development and installed a C<cpanm> against that C<perl>.
+Alternate constructor to be used when you have already built a C<perl>
+executable to be used in tracking Perl development and installed a C<cpanm>
+against that C<perl>.
 
 =item * Arguments
 
@@ -812,7 +960,11 @@ Takes a hash reference with the following elements:
 
 =item *
 
+TK
+
 =item *
+
+TK
 
 =back
 
