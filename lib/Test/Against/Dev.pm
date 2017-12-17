@@ -23,7 +23,9 @@ Test::Against::Dev - Test CPAN modules against Perl dev releases
 
 =head1 SYNOPSIS
 
-TK
+    my $self = Test::Against::Dev->new( {
+        application_dir => $application_dir,
+    } );
 
 =head1 DESCRIPTION
 
@@ -165,8 +167,8 @@ and C<results/>.
 
 =item * Arguments
 
-    $self = Test::Against::Dev->new( {
-        application_dir         => '/path/to/application',
+    my $self = Test::Against::Dev->new( {
+        application_dir => $application_dir,
     } );
 
 Takes a hash reference with the following elements:
@@ -184,6 +186,15 @@ String holding path to the directory which will serve as the top level for your 
 Test::Against::Dev object.
 
 =item * Comment
+
+This class has two possible constructors:  this method and
+C<new_from_existing_perl_cpanm()>.  Use this one when you need to do a fresh
+install of a F<perl> by compiling it from a downloaded tarball.  Use the other
+one when you have already installed such a F<perl> on disk and have installed
+a F<cpanm> against that F<perl>.
+
+The method will guarantee that underneath the application directory there are
+two directories:  F<testing> and F<results>.
 
 =back
 
@@ -233,6 +244,104 @@ sub get_results_dir {
     return $self->{results_dir};
 }
 
+=head2 C<perform_tarball_download()>
+
+=over 4
+
+=item * Purpose
+
+=item * Arguments
+
+    ($tarball_path, $work_dir) = $self->perform_tarball_download( {
+        host                => 'ftp.funet.fi',
+        hostdir             => /pub/languages/perl/CPAN/src/5.0,
+        perl_version        => 'perl-5.27.6',
+        compression         => 'gz',
+        work_dir            => "~/tmp/Downloads",
+        verbose             => 1,
+        mock                => 0,
+    } );
+
+Hash reference with the following elements:
+
+=over 4
+
+=item * host
+
+String.  The FTP mirror from which you wish to download a tarball of a Perl release.  Required.
+
+=item * hostdir
+
+String.  The directory on the FTP mirror specified by C<host> in which the tarball is located.  Required.
+
+=item * perl_version
+
+String denoting a Perl release.  The string must start with C<perl->, followed
+by the major version, minor version and patch version delimited by periods.
+The major version is always C<5>.  Required.
+
+=item * compression
+
+String denoting the compression format of the tarball you wish to download.
+Eligible compression formats are C<gz>, C<bz2> and C<bz2>.  Required.
+
+Note that not all compression formats are available for all tarballs on our
+FTP mirrors and that the compression formats offered may change over time.
+
+Note further that C<gz> is currently the recommended format, as the other
+methods have not been thorougly tested.
+
+=item * work_dir
+
+String holding absolute path to the directory in which the work of configuring
+and building the new F<perl> will be performed.  Optional; if not provided a
+temporary directory created via C<File::Temp::tempdir()> will be used.
+
+=item * verbose
+
+Extra information provided on STDOUT.  Optional; defaults to being off;
+provide a Perl-true value to turn it on.  Scope is limited to this method.
+
+=item * mock
+
+Display the expected results of the download on STDOUT, but don't actually do
+it.  Optional; defaults to being off; provide a Perl-true value to turn it on.
+Any program using this option will terminate with a non-zero status once the
+results have been displayed.
+
+=back
+
+=item * Return Value
+
+Returns a list of two elements:
+
+=over 4
+
+=item * Tarball path
+
+String holding absolute path to the tarball once downloaded.
+
+=item * Work directory
+
+String holding path of directory in which work of configuring and building
+F<perl> will be performed.  (This is probably only useful if you want to see
+the path to the temporary directory.  It will be uninitialized if C<mock> is
+turned on.)
+
+=back
+
+=item * Comment
+
+The method guarantees the existence of a directory whose name will be the
+value of the C<perl_version> argument and which will be found underneath the
+F<testing> directory (discussed in C<new()> above).  This "release directory"
+will be the directory below which a new F<perl> will be installed.
+
+=back
+
+=cut
+
+
 sub perform_tarball_download {
     my ($self, $args) = @_;
     croak "perform_tarball_download: Must supply hash ref as argument"
@@ -256,8 +365,9 @@ sub perform_tarball_download {
     croak "Could not locate '$args->{work_dir}' for purpose of downloading tarball and building perl"
         if (exists $args->{work_dir} and (! -d $args->{work_dir}));
 
-    # host, hostdir, compression are only used within the scope of this method
-    # hence don't need to be inserted into object
+    # host, hostdir, compression are only used within the scope of this
+    # method.  Hence, they don't need to be inserted into the object.
+
     for my $k ( qw| perl_version work_dir | ) {
         $self->{$k} = $args->{$k};
     }
