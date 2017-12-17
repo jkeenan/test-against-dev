@@ -52,7 +52,11 @@ SKIP: {
     like($stdout, qr/Path to tarball is $tarball_path/s,
         "Got expected verbose output: tarball path");
 
-    my $this_perl = $self->configure_build_install_perl({ verbose => 1 });
+    my $alt = "sh ./Configure -des -Dusedevel -Dprefix=$release_dir -Uversiononly -Dman1dir=none -Dman3dir=none";
+    my $this_perl = $self->configure_build_install_perl({
+        configure_command => $alt,
+        verbose => 1,
+    });
     ok(-f $this_perl, "Installed $this_perl");
 
     my $this_cpanm = $self->fetch_cpanm( { verbose => 1 } );
