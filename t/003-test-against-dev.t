@@ -54,15 +54,18 @@ SKIP: {
 
     my $this_perl = $self->configure_build_install_perl({ verbose => 1 });
     ok(-f $this_perl, "Installed $this_perl");
+
     my $this_cpanm = $self->fetch_cpanm( { verbose => 1 } );
     ok(-f $this_cpanm, "Installed $this_cpanm");
     ok(-e $this_cpanm, "'$this_cpanm' is executable");
+
     my $bin_dir = $self->get_bin_dir();
     ok(-d $bin_dir, "Located '$bin_dir/'");
     my $lib_dir = $self->get_lib_dir();
     ok(-d $lib_dir, "Located '$lib_dir/'");
     my $cpanm_dir = $self->get_cpanm_dir();
     ok(-d $cpanm_dir, "Located '$cpanm_dir/'");
+
     system(qq|$this_perl -I$self->{lib_dir} $this_cpanm List::Compare|)
         and croak "Unable to use 'cpanm' to install module List::Compare";
     my $hw = `$this_perl -I$self->{lib_dir} -MList::Compare -e 'print q|hello world|;'`;

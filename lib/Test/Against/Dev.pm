@@ -266,21 +266,21 @@ Hash reference with the following elements:
 
 =over 4
 
-=item * host
+=item * C<host>
 
 String.  The FTP mirror from which you wish to download a tarball of a Perl release.  Required.
 
-=item * hostdir
+=item * C<hostdir>
 
 String.  The directory on the FTP mirror specified by C<host> in which the tarball is located.  Required.
 
-=item * perl_version
+=item * C<perl_version>
 
 String denoting a Perl release.  The string must start with C<perl->, followed
 by the major version, minor version and patch version delimited by periods.
 The major version is always C<5>.  Required.
 
-=item * compression
+=item * C<compression>
 
 String denoting the compression format of the tarball you wish to download.
 Eligible compression formats are C<gz>, C<bz2> and C<bz2>.  Required.
@@ -291,18 +291,18 @@ FTP mirrors and that the compression formats offered may change over time.
 Note further that C<gz> is currently the recommended format, as the other
 methods have not been thorougly tested.
 
-=item * work_dir
+=item * C<work_dir>
 
 String holding absolute path to the directory in which the work of configuring
 and building the new F<perl> will be performed.  Optional; if not provided a
 temporary directory created via C<File::Temp::tempdir()> will be used.
 
-=item * verbose
+=item * C<verbose>
 
 Extra information provided on STDOUT.  Optional; defaults to being off;
 provide a Perl-true value to turn it on.  Scope is limited to this method.
 
-=item * mock
+=item * C<mock>
 
 Display the expected results of the download on STDOUT, but don't actually do
 it.  Optional; defaults to being off; provide a Perl-true value to turn it on.
@@ -335,7 +335,8 @@ turned on.)
 The method guarantees the existence of a directory whose name will be the
 value of the C<perl_version> argument and which will be found underneath the
 F<testing> directory (discussed in C<new()> above).  This "release directory"
-will be the directory below which a new F<perl> will be installed.
+-- accessible by calling C<$self->get_release_dir()> -- will be the directory
+below which a new F<perl> will be installed.
 
 =back
 
@@ -449,6 +450,60 @@ sub access_make_install_command {
     }
     $self->{make_install_command} = $cmd;
 }
+
+=head2 C<configure_build_install_perl()>
+
+=over 4
+
+=item * Purpose
+
+Configures, builds and installs F<perl> from the downloaded tarball.
+
+=item * Arguments
+
+Hash reference with the following elements:
+
+=over 4
+
+    my $mic = $self->access_make_install_command($args->{make_install_command} || '');
+
+=item * C<configure_command>
+
+String holding a shell command to call Perl's F<Configure> program with
+command-line options.  Optional; will default to:
+
+    my $release_dir = $self->get_release_dir();
+
+    sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$release_dir \
+        -Dman1dir=none -Dman3dir=none
+
+The spelling of the command is subsequently accessible by calling C<$self->access_configure_command()>.
+
+=item * C<make_install_command>
+
+String holding a shell command to build and install F<perl> underneath the
+release directory.  Optional; will default to:
+
+    make install
+
+The spelling of the command is subsequently accessible by calling C<$self->access_make_install_command()>.
+
+=item * C<verbose>
+
+Extra information provided on STDOUT.  Optional; defaults to being off.  Set
+to C<1> (recommended) for moderate verbosity.  Set to C<2> for extra verbosity
+(full output of decompression commands, F<Configure> and F<make>).  Scope is
+limited to this method.
+
+=back
+
+=item * Return Value
+
+=item * Comment
+
+=back
+
+=cut
 
 sub configure_build_install_perl {
     my ($self, $args) = @_;
