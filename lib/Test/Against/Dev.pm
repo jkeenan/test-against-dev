@@ -461,6 +461,10 @@ Configures, builds and installs F<perl> from the downloaded tarball.
 
 =item * Arguments
 
+    my $this_perl = $self->configure_build_install_perl({
+        verbose => 1,
+    });
+
 Hash reference with the following elements:
 
 =over 4
@@ -499,7 +503,16 @@ limited to this method.
 
 =item * Return Value
 
+String holding absolute path to the new F<perl> executable.  This location can
+subsequently be accessed by calling C<$self->get_this_perl()>.
+
 =item * Comment
+
+The new F<perl> executable will sit two levels underneath the release
+directory in a directory named F<bin/>.  That directory will sit next to a
+directory named F<lib/> under which libraries will be installed.  Those
+locations can subsequently be accessed by calling C<$self->get_bin_dir()> and
+C<$self->get_lib_dir()>, respectively.
 
 =back
 
