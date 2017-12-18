@@ -24,7 +24,7 @@ Test::Against::Dev - Test CPAN modules against Perl dev releases
 =head1 SYNOPSIS
 
     my $self = Test::Against::Dev->new( {
-        application_dir => $application_dir,
+        application_dir => '/path/to/application',
     } );
 
     my ($tarball_path, $work_dir) = $self->perform_tarball_download( {
@@ -190,7 +190,7 @@ and C<results/>.
 =item * Arguments
 
     my $self = Test::Against::Dev->new( {
-        application_dir => $application_dir,
+        application_dir => '/path/to/application',
     } );
 
 Takes a hash reference with the following elements:
@@ -1136,22 +1136,35 @@ against that C<perl>.
 =item * Arguments
 
     $self = Test::Against::Dev->new_from_existing_perl_cpanm( {
-        path_to_perl    => $good_path,
-        results_dir     => $tdir,
-        perl_version    => $perl_version,
+        path_to_perl    => '/path/to/perl-5.27.0/bin/perl',
+        application_dir => '/path/to/application',
+        perl_version    => 'perl-5.27.0',
     } );
 
 Takes a hash reference with the following elements:
 
 =over 4
 
-=item *
+=item * C<path_to_perl>
 
-TK
+String holding path to an installed F<perl> executable.  Required.
 
-=item *
+=item * C<application_dir>
 
-TK
+String holding path to the directory which will serve as the top level for
+your application.  (Same meaning as in C<new()>.)  Required.
+
+=item * C<perl_version>
+
+String denoting a Perl release.  The string must start with C<perl->, followed
+by the major version, minor version and patch version delimited by periods.
+The major version is always C<5>.  (Same meaning as in
+C<perform_tarball_download()>.)  Required.
+
+=item * C<verbose>
+
+Extra information provided on STDOUT.  Optional; defaults to being off;
+provide a Perl-true value to turn it on.  Scope is limited to this method.
 
 =back
 
@@ -1160,6 +1173,16 @@ TK
 Test::Against::Dev object.
 
 =item * Comment
+
+As was the case with C<new()>, this method guarantees the existence of the
+application directory and the F<testing> and F<results> directories
+thereunder.  It also performs sanity checks for the paths to installed F<perl>
+and F<cpanm>.
+
+If you already have a F<perl> installed which suffices for a monthly
+development release, then you can start with this method, omit calls to
+C<perform_tarball_download()>, C<configure_build_install_perl()> and
+C<fetch_cpanm()> and go directly to C<run_cpanm()>.
 
 =back
 
@@ -1197,8 +1220,6 @@ sub new_from_existing_perl_cpanm {
         $data->{"${dir}_dir"} = $fdir;
     }
 
-    # TODO: Add a dryrun parameter?
-    #
     # Is the perl's parent directory bin/?
     # Is there a lib/ directory next to parent bin/?
     # Can the user write to directory lib/?
@@ -1258,13 +1279,8 @@ respectively.)
 
 =head1 SUPPORT
 
-This software has not yet been released to CPAN.  Until it does, you should
-contact the author directly at the email address listed below.  Please contact
-the author before submitting patches or pull requests.
-
-Once the software has been released to CPAN, you should report any bugs by
-mail to C<bug-Test-Against-Dev@rt.cpan.org> or through the web interface at
-L<http://rt.cpan.org>.
+Please report any bugs by mail to C<bug-Test-Against-Dev@rt.cpan.org> or
+through the web interface at L<http://rt.cpan.org>.
 
 =head1 COPYRIGHT
 
