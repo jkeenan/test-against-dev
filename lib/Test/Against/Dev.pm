@@ -1,7 +1,7 @@
 package Test::Against::Dev;
 use strict;
 use 5.10.1;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 use Carp;
 use Cwd;
 use File::Basename;
@@ -144,7 +144,12 @@ we are in.  The human user must intervene at this point.
 
 =item * Platform
 
-The user should select a machine/platform which is likely to be reasonably stable over one Perl 5 annual development cycle.  We understand that the platform's system administrator will be updating system libraries for security and other reasons over time.  But it would be a hassle to run this software on a machine scheduled for a complete major version update of its operating system.
+The user should select a machine/platform which is likely to be reasonably
+stable over one Perl 5 annual development cycle.  We understand that the
+platform's system administrator will be updating system libraries for security
+and other reasons over time.  But it would be a hassle to run this software on
+a machine scheduled for a complete major version update of its operating
+system.
 
 =item * Perl 5 Configuration
 
@@ -167,13 +172,60 @@ testing period.
 
 =item * Selection of CPAN Libraries for Testing
 
-TK
+B<This is the most important step in preparation to use this library.>
+
+When you use this library, you are in effect saying:  I<Here is a list of CPAN
+modules important enough to me that I don't want to see them start breaking in
+the course of Perl's annual development cycle.  (If they do break, then the
+Perl 5 Porters and the modules' authors/maintainers must address how to handle
+the breakage.)  To keep track of the problem, I'm going to build F<perl> from
+each monthly release and attempt to install this entire list against that
+F<perl>.>
+
+Hence, once you decide to track a certain CPAN library, you should continue to
+include it in your list of modules to be tracked for the balance of the
+development cycle.  You can, it is true, B<add> additional modules to your
+list part way through the development cycle.  You simply won't have the same
+baseline data that you have for the modules you selected at the very
+beginning.
+
+Here are some approaches that come to mind:
+
+=over 4
+
+=item * CPAN river
+
+The CPAN river is a concept developed by Neil Bowers and other participants in
+the Perl Toolchain Gang and Perl QA Hackathons and Summits.  The concept
+starts from the premise that CPAN libraries upon which many other CPAN
+libraries depend are more important than those upon which few other libraries
+depend.  That's a useful definition of importance even if it is not strictly
+true.  Modules "way upstream" feed modules and real-world code "farther
+downstream".  Hence, if Perl 5's development branch changes in a way such that
+"upstream" modules start to fail to configure, build, test and install
+correctly, then we have a potentially serious problem.  The author of this
+library has primarily developed it with the idea that it would be run monthly
+to see what happens with the 1000 "farthest upstream" modules -- the so-called
+"CPAN River Top 1000".
+
+=item * Organizational dependencies
+
+Many organizations use technologies such as F<Carton> and F<cpanfile> to keep
+track of their dependencies on CPAN libraries.  The lists compile by such
+applications could very easily be translated into a list of modules tested
+once a month against a Perl development release.
+
+=item * What repeatedly breaks
+
+Certain CPAN libraries get broken relatively frequently.  While this can
+happen because of sub-standard coding practices in those libraries, it more
+often happens because these libraries, in order to do what they want to do,
+reach down deep into the Perl 5 guts and use undocumented or not publicly
+supported features of Perl.
 
 =back
 
-=head2 Different Ways of Using This Library
-
-TK
+=back
 
 =head1 METHODS
 
