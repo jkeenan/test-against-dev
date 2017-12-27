@@ -1128,7 +1128,7 @@ sub analyze_json_logs {
     croak "$foutput not created" unless (-f $foutput);
     say "Created $foutput" if $verbose;
 
-    # Having archives our log.json files, we now proceed to read them and to
+    # Having archived our log.json files, we now proceed to read them and to
     # write a pipe-separated-values file summarizing the run.
 
     my %data = ();
