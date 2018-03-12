@@ -197,7 +197,6 @@ note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against ins
     unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
 SKIP: {
-    #skip 'Test assumes installed perl and cpanm', 8
     skip 'Test assumes installed perl and cpanm', 10
         unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 

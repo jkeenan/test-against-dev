@@ -1058,6 +1058,9 @@ sub analyze_cpanm_build_logs {
 
 =item * Purpose
 
+Create a pipe-separated-values file (C<.psv>) summarizing the results of a
+given run.
+
 =item * Arguments
 
     my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
@@ -1079,9 +1082,12 @@ provide a Perl-true value to turn it on.  Scope is limited to this method.
 
 =item * Return Value
 
-String holding absolute path 
+String holding absolute path to the C<.psv> file created.
 
 =item * Comment
+
+As a precaution, the function creates a tarball to archive the F<.log.json>
+files for a given run.
 
 =back
 
