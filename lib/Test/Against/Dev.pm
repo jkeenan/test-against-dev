@@ -1,7 +1,7 @@
 package Test::Against::Dev;
 use strict;
 use 5.10.1;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use Carp;
 use Cwd;
 use File::Basename;
@@ -1358,7 +1358,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-Copyright James E Keenan 2017.  All rights reserved.
+Copyright James E Keenan 2017-2018.  All rights reserved.
 
 =head1 ACKNOWLEDGEMENTS
 
