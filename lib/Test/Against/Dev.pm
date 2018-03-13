@@ -1058,12 +1058,14 @@ sub analyze_cpanm_build_logs {
 
 =item * Purpose
 
-Create a pipe-separated-values file (C<.psv>) summarizing the results of a
-given run.
+Create a character-delimited-values file summarizing the results of a given
+run.  The delimiter defaults to a pipe (C<|>), thereby creating a
+pipe-separated values file (C<.psv>), but you may select a comma (C<,>),
+generating a comma-separated-values file (C<.csv>) as well.
 
 =item * Arguments
 
-    my $fpsvfile = $self->analyze_json_logs( { run => 1, verbose => 1 } );
+    my $fcdvfile = $self->analyze_json_logs( { run => 1, verbose => 1, sep_char => '|' } );
 
 Hash reference with these elements:
 
@@ -1078,11 +1080,16 @@ A positive integer.
 Extra information provided on STDOUT.  Optional; defaults to being off;
 provide a Perl-true value to turn it on.  Scope is limited to this method.
 
+=item * C<sep_char>
+
+Delimiter character.  Optional; defaults to pipe (C<|>), but comma (C<,>) may
+also be chosen.
+
 =back
 
 =item * Return Value
 
-String holding absolute path to the C<.psv> file created.
+String holding absolute path to the C<.psv> or C<.csv> file created.
 
 =item * Comment
 
@@ -1099,6 +1106,9 @@ sub analyze_json_logs {
     croak "analyze_json_logs: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
+    my $sep_char = delete $args->{sep_char} || '|';
+    croak "analyze_json_logs: Currently only pipe ('|') and comma (',') are supported as delimiter characters"
+        unless ($sep_char eq '|' or $sep_char eq ',');
     croak "analyze_json_logs: Must supply a 'run' number"
         unless (defined $args->{run} and length($args->{run}));
     my $srun = sprintf("%02d" => $args->{run});
@@ -1135,7 +1145,7 @@ sub analyze_json_logs {
     say "Created $foutput" if $verbose;
 
     # Having archived our log.json files, we now proceed to read them and to
-    # write a pipe-separated-values file summarizing the run.
+    # write a pipe- (or comma-) separated-values file summarizing the run.
 
     my %data = ();
     for my $log (@json_log_files) {
@@ -1148,15 +1158,15 @@ sub analyze_json_logs {
     }
     #pp(\%data);
 
-    my $psvfile = join('.' => (
+    my $cdvfile = join('.' => (
         $self->{title},
         $self->{perl_version},
         $srun,
-        'psv'
+        (($sep_char eq ',') ? 'csv' : 'psv'),
     ) );
 
-    my $fpsvfile = File::Spec->catfile($self->{storage_dir}, $psvfile);
-    say "Output will be: $fpsvfile" if $verbose;
+    my $fcdvfile = File::Spec->catfile($self->{storage_dir}, $cdvfile);
+    say "Output will be: $fcdvfile" if $verbose;
 
     my @fields = ( qw| author distname distversion grade | );
     my $perl_version = $self->{perl_version};
@@ -1164,9 +1174,9 @@ sub analyze_json_logs {
         'dist',
         map { "$perl_version.$_" } @fields,
     ];
-    my $psv = Text::CSV_XS->new({ binary => 1, auto_diag => 1, sep_char => '|', eol => $/ });
-    open my $OUT, ">:encoding(utf8)", $fpsvfile
-        or croak "Unable to open $fpsvfile for writing";
+    my $psv = Text::CSV_XS->new({ binary => 1, auto_diag => 1, sep_char => $sep_char, eol => $/ });
+    open my $OUT, ">:encoding(utf8)", $fcdvfile
+        or croak "Unable to open $fcdvfile for writing";
     $psv->print($OUT, $columns), "\n" or $psv->error_diag;
     for my $dist (sort keys %data) {
         $psv->print($OUT, [
@@ -1174,11 +1184,11 @@ sub analyze_json_logs {
            @{$data{$dist}}{@fields},
         ]) or $psv->error_diag;
     }
-    close $OUT or croak "Unable to close $fpsvfile after writing";
-    croak "$fpsvfile not created" unless (-f $fpsvfile);
-    say "Examine pipe-separated values in $fpsvfile" if $verbose;
+    close $OUT or croak "Unable to close $fcdvfile after writing";
+    croak "$fcdvfile not created" unless (-f $fcdvfile);
+    say "Examine ", (($sep_char eq ',') ? 'comma' : 'pipe'), "-separated values in $fcdvfile" if $verbose;
 
-    return $fpsvfile;
+    return $fcdvfile;
 }
 
 =head2 C<new_from_existing_perl_cpanm()>
