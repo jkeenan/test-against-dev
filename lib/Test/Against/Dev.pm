@@ -593,7 +593,7 @@ sub configure_build_install_perl {
     my ($self, $args) = @_;
     my $cwd = cwd();
     $args //= {};
-    croak "perform_tarball_download: Must supply hash ref as argument"
+    croak "configure_build_install_perl: Must supply hash ref as argument"
         unless ref($args) eq 'HASH';
     my $verbose = delete $args->{verbose} || '';
 
