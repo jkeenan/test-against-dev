@@ -964,20 +964,20 @@ sub gzip_cpanm_build_log {
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
 
-    # Read the directory holding gzipped build.logs.  If there are no files
-    # whose names match the pattern, then set $run to 01.  If there are,
-    # determine the next appropriate run number.
-
-    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.(\d{2})\.build\.log\.gz$/;
+    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.build\.log\.gz$/;
     $self->{gzlog_pattern} = $pattern;
     opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
     my @files_found = grep { -f $_ and $_ =~ m/$pattern/ } readdir $DIRH;
     closedir $DIRH or croak "Unable to close buildlogs_dir after reading";
-    my $srun = (! @files_found) ? sprintf("%02d" => 1) : sprintf("%02d" => (scalar(@files_found) + 1));
+
+    # In this new approach, we'll assume that we never do anything except
+    # exactly 1 run per monthly release.  Hence, there shouldn't be any files
+    # in this directory whatsoever.  We'll croak if there are such file.
+    croak "There are already log files in '$self->{buildlogs_dir}'"if scalar(@files_found);
+
     my $gzipped_build_log = join('.' => (
         $self->{title},
         $self->{perl_version},
-        $srun,
         'build',
         'log',
         'gz'
@@ -1024,10 +1024,7 @@ sub analyze_cpanm_build_logs {
     my $verbose = delete $args->{verbose} || '';
 
     my $gzlog = $self->{gzlog};
-    my ($srun) = basename($gzlog) =~ m/$self->{gzlog_pattern}/;
-    croak "Unable to identify run number within $gzlog filename"
-        unless $srun;
-    my $ranalysis_dir = File::Spec->catdir($self->{analysis_dir}, $srun);
+    my $ranalysis_dir = $self->{analysis_dir};
     unless (-d $ranalysis_dir) { make_path($ranalysis_dir, { mode => 0755 }); }
         croak "Could not locate $ranalysis_dir" unless (-d $ranalysis_dir);
 
@@ -1065,15 +1062,11 @@ generating a comma-separated-values file (C<.csv>) as well.
 
 =item * Arguments
 
-    my $fcdvfile = $self->analyze_json_logs( { run => 1, verbose => 1, sep_char => '|' } );
+    my $fcdvfile = $self->analyze_json_logs( { verbose => 1, sep_char => '|' } );
 
 Hash reference with these elements:
 
 =over 4
-
-=item * C<run>
-
-A positive integer.
 
 =item * C<verbose>
 
@@ -1109,16 +1102,12 @@ sub analyze_json_logs {
     my $sep_char = delete $args->{sep_char} || '|';
     croak "analyze_json_logs: Currently only pipe ('|') and comma (',') are supported as delimiter characters"
         unless ($sep_char eq '|' or $sep_char eq ',');
-    croak "analyze_json_logs: Must supply a 'run' number"
-        unless (defined $args->{run} and length($args->{run}));
-    my $srun = sprintf("%02d" => $args->{run});
 
     # As a precaution, we archive the log.json files.
 
     my $output = join('.' => (
         $self->{title},
         $self->{perl_version},
-        $srun,
         'log',
         'json',
         'gz'
@@ -1126,9 +1115,9 @@ sub analyze_json_logs {
     my $foutput = File::Spec->catfile($self->{storage_dir}, $output);
     say "Output will be: $foutput" if $verbose;
 
-    my $vranalysis_dir = File::Spec->catdir($self->{analysis_dir}, $srun);
+    my $vranalysis_dir = $self->{analysis_dir};
     opendir my $DIRH, $vranalysis_dir or croak "Unable to open $vranalysis_dir for reading";
-    my @json_log_files = sort map { File::Spec->catfile('analysis', $srun, $_) }
+    my @json_log_files = sort map { File::Spec->catfile('analysis', $_) }
         grep { m/\.log\.json$/ } readdir $DIRH;
     closedir $DIRH or croak "Unable to close $vranalysis_dir after reading";
     dd(\@json_log_files) if $verbose;
@@ -1161,7 +1150,6 @@ sub analyze_json_logs {
     my $cdvfile = join('.' => (
         $self->{title},
         $self->{perl_version},
-        $srun,
         (($sep_char eq ',') ? 'csv' : 'psv'),
     ) );
 
