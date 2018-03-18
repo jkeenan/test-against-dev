@@ -1141,7 +1141,15 @@ sub analyze_json_logs {
         my $flog = File::Spec->catfile($cwd, $log);
         my %this = ();
         my $f = Path::Tiny::path($flog);
-        my $decoded = decode_json($f->slurp_utf8);
+        my $decoded;
+        {
+            local $@;
+            eval { $decoded = decode_json($f->slurp_utf8); };
+            if ($@) {
+                say STDERR "JSON decoding problem in $flog: <$@>";
+                eval { $decoded = JSON->new->decode($f->slurp_utf8); };
+            }
+        }
         map { $this{$_} = $decoded->{$_} } ( qw| author dist distname distversion grade | );
         $data{$decoded->{dist}} = \%this;
     }
