@@ -741,20 +741,27 @@ sub fetch_cpanm {
     my ($scalar, $where);
     $where = $ff->fetch( to => \$scalar );
     croak "Did not download 'cpanm'" unless (-f $where);
-    open my $IN, '<', \$scalar or croak "Unable to open scalar for reading";
     my $this_cpanm = File::Spec->catfile($self->{bin_dir}, 'cpanm');
-    open my $OUT, '>', $this_cpanm or croak "Unable to open $this_cpanm for writing";
-    while (<$IN>) {
-        chomp $_;
-        say $OUT $_;
-    }
-    close $OUT or croak "Unable to close $this_cpanm after writing";
-    close $IN or croak "Unable to close scalar after reading";
+    # If cpanm is already installed in bin_dir, we don't need to try to
+    # reinstall it.
     unless (-f $this_cpanm) {
-        croak "Unable to locate '$this_cpanm'";
+        open my $IN, '<', \$scalar or croak "Unable to open scalar for reading";
+        open my $OUT, '>', $this_cpanm or croak "Unable to open $this_cpanm for writing";
+        while (<$IN>) {
+            chomp $_;
+            say $OUT $_;
+        }
+        close $OUT or croak "Unable to close $this_cpanm after writing";
+        close $IN or croak "Unable to close scalar after reading";
+        unless (-f $this_cpanm) {
+            croak "Unable to locate '$this_cpanm'";
+        }
+        else {
+            say "Installed '$this_cpanm'" if $verbose;
+        }
     }
     else {
-        say "Installed '$this_cpanm'" if $verbose;
+        say "'$this_cpanm' already installed" if $verbose;
     }
     my $cnt = chmod 0755, $this_cpanm;
     croak "Unable to make '$this_cpanm' executable" unless $cnt;
