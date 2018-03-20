@@ -130,7 +130,7 @@ So the output for particular CPAN libraries will look like this:
     Algorithm-C3|HAARG|Algorithm-C3-0.10|0.10|PASS|HAARG|Algorithm-C3-0.10|0.10|PASS|...
 
 If a particular CPAN library receives a grade of C<PASS> one month and a grade
-of <FAIL> month, it ought to be inspected for the cause of that breakage.
+of C<FAIL> month, it ought to be inspected for the cause of that breakage.
 Sometimes the change in Perl 5 is wrong and needs to be reverted.  Sometimes
 the change in Perl 5 is correct (or, at least, plausible) but exposes
 sub-optimal code in the CPAN module.  Sometimes the failure is due to external
@@ -145,7 +145,7 @@ we are in.  The human user must intervene at this point.
 =item * Platform
 
 The user should select a machine/platform which is likely to be reasonably
-stable over one Perl 5 annual development cycle.  We understand that the
+stable over one Perl 5 annual development cycle.  We presume that the
 platform's system administrator will be updating system libraries for security
 and other reasons over time.  But it would be a hassle to run this software on
 a machine scheduled for a complete major version update of its operating
@@ -154,13 +154,13 @@ system.
 =item * Perl 5 Configuration
 
 The user must decide on a Perl 5 configuration before using
-F<Test-Against-Dev> on a regular basis and not change that over the course of
-the testing period.  Otherwise, the results may reflect changes in that
-configuration rather than changes in Perl 5 core distribution code or changes
-in the targeted CPAN libraries.
+F<Test-Against-Dev> on a regular basis and then must refrain from changing
+that configuration over the course of the testing period.  Otherwise, the
+results may reflect changes in that configuration rather than changes in Perl
+5 core distribution code or changes in the targeted CPAN libraries.
 
-"Perl 5 configuration" means the way one calls F<Configure> when building Perl
-5 from source, <e.g.>:
+By "Perl 5 configuration" we mean the way one calls F<Configure> when building
+Perl 5 from source, <e.g.>:
 
     sh ./Configure -des -Dusedevel \
         -Duseithreads \
@@ -211,7 +211,7 @@ to see what happens with the 1000 "farthest upstream" modules -- the so-called
 =item * Organizational dependencies
 
 Many organizations use technologies such as F<Carton> and F<cpanfile> to keep
-track of their dependencies on CPAN libraries.  The lists compile by such
+track of their dependencies on CPAN libraries.  The lists compiled by such
 applications could very easily be translated into a list of modules tested
 once a month against a Perl development release.
 
@@ -227,6 +227,50 @@ supported features of Perl.
 
 =back
 
+=head2 Notice of Breaking Change in Version 0.06 (March 20 2018)
+
+If you are first using F<Test-Against-Dev> in version 0.06 released on the
+date above, you may skip this section.
+
+If you used F<Test-Against-Dev> in an ongoing way prior to that version,
+please be advised that the library now creates a slightly different directory
+structure beneath the directory specified by the value of F<application_dir>
+passed to the constructor.  Up through version 0.05, that structure looked
+like this:
+
+    $> find . -maxdepth 4 -type d
+    ./results
+    ./results/perl-5.27.6
+    ./results/perl-5.27.6/storage
+    ./results/perl-5.27.6/analysis
+    ./results/perl-5.27.6/analysis/01
+    ./results/perl-5.27.6/buildlogs
+    ./testing
+    ./testing/perl-5.27.6
+    ./testing/perl-5.27.6/.cpanreporter
+    ./testing/perl-5.27.6/.cpanm
+    ./testing/perl-5.27.6/.cpanm/work
+    ./testing/perl-5.27.6/lib
+    ./testing/perl-5.27.6/lib/site_perl
+    ./testing/perl-5.27.6/lib/5.27.6
+    ./testing/perl-5.27.6/bin
+
+The F<results/E<lt>perl-versionE<gt>/analysis/01> directory would hold F<.log.json>
+files like these:
+
+    $> ls -l ./results/perl-5.27.6/analysis/01 | head -5
+    total 5824
+    -rw-r--r-- 1 jkeenan jkeenan    757 Dec 16 13:58 ABH.Mozilla-CA-20160104.log.json
+    -rw-r--r-- 1 jkeenan jkeenan   6504 Dec 16 13:58 ABIGAIL.Regexp-Common-2017060201.log.json
+    -rw-r--r-- 1 jkeenan jkeenan  11639 Dec 16 13:58 ABW.Template-Toolkit-2.27.log.json
+    -rw-r--r-- 1 jkeenan jkeenan    645 Dec 16 13:58 ABW.XML-Namespace-0.02.log.json
+
+In versions 0.06 and later, the F<.log.json> files are placed one directory
+higher, I<i.e.,> in F<results/E<lt>perl-versionE<gt>/analysis>.  An F<analysis/01>
+directory is no longer created, as it was deemed unnecessary.  Please upgrade
+to a newer version at the completion of your tracking of the Perl 5.27
+development cycle, I<i.e.,> once Perl 5.28.0 has been released.
+
 =head1 METHODS
 
 =head2 C<new()>
@@ -236,8 +280,8 @@ supported features of Perl.
 =item * Purpose
 
 Test::Against::Dev constructor.  Guarantees that the top-level directory for
-the application exists, then creates two directories thereunder:  C<testing/>
-and C<results/>.
+the application (C<application_dir>) already exists, then creates two
+directories thereunder:  F<testing/> and F<results/>.
 
 =item * Arguments
 
@@ -262,10 +306,10 @@ Test::Against::Dev object.
 =item * Comment
 
 This class has two possible constructors:  this method and
-C<new_from_existing_perl_cpanm()>.  Use this one when you need to do a fresh
-install of a F<perl> by compiling it from a downloaded tarball.  Use the other
-one when you have already installed such a F<perl> on disk and have installed
-a F<cpanm> against that F<perl>.
+C<new_from_existing_perl_cpanm()> (see below).  Use C<new()> when you need to
+do a fresh install of a F<perl> by compiling it from a downloaded tarball.
+Use C<new_from_existing_perl_cpanm()> when you have already installed such a
+F<perl> on disk and have installed a F<cpanm> against that F<perl>.
 
 The method will guarantee that underneath the application directory there are
 two directories:  F<testing> and F<results>.
@@ -342,11 +386,13 @@ Hash reference with the following elements:
 
 =item * C<host>
 
-String.  The FTP mirror from which you wish to download a tarball of a Perl release.  Required.
+String.  The FTP mirror from which you wish to download a tarball of a Perl
+release.  Required.
 
 =item * C<hostdir>
 
-String.  The directory on the FTP mirror specified by C<host> in which the tarball is located.  Required.
+String.  The directory on the FTP mirror specified by C<host> in which the
+tarball is located.  Required.
 
 =item * C<perl_version>
 
@@ -552,7 +598,8 @@ command-line options.  Optional; will default to:
     sh ./Configure -des -Dusedevel -Uversiononly -Dprefix=$release_dir \
         -Dman1dir=none -Dman3dir=none
 
-The spelling of the command is subsequently accessible by calling C<$self->access_configure_command()>.
+The spelling of the command is subsequently accessible by calling
+C<$self->access_configure_command()>.
 
 =item * C<make_install_command>
 
@@ -561,7 +608,8 @@ release directory.  Optional; will default to:
 
     make install
 
-The spelling of the command is subsequently accessible by calling C<$self->access_make_install_command()>.
+The spelling of the command is subsequently accessible by calling
+C<$self->access_make_install_command()>.
 
 =item * C<verbose>
 
@@ -697,7 +745,8 @@ Hash reference with these elements:
 
 =item * C<uri>
 
-String holding URI from which F<cpanm> will be downloaded.  Optional; defaults to L<http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.7043/bin/cpanm>.
+String holding URI from which F<cpanm> will be downloaded.  Optional; defaults
+to L<http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.7043/bin/cpanm>.
 
 =item * C<verbose>
 
@@ -1201,8 +1250,8 @@ sub analyze_json_logs {
 =item * Purpose
 
 Alternate constructor to be used when you have already built a C<perl>
-executable to be used in tracking Perl development and installed a C<cpanm>
-against that C<perl>.
+executable to be used in tracking Perl development and have installed a
+C<cpanm> against that C<perl>.
 
 =item * Arguments
 
@@ -1340,6 +1389,9 @@ dependent upon F<App::cpanminus::reporter>, which in turn is dependent upon
 F<cpanm>.  (Nonetheless, this software could never have been written without
 those two libraries by Breno G. de Oliveira and Tatsuhiko Miyagawa,
 respectively.)
+
+This library has been developed in a Unix programming environment and is
+unlikely to work in its current form on Windows, Cygwin or VMS.
 
 =head1 AUTHOR
 
