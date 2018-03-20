@@ -271,6 +271,10 @@ directory is no longer created, as it was deemed unnecessary.  Please upgrade
 to a newer version at the completion of your tracking of the Perl 5.27
 development cycle, I<i.e.,> once Perl 5.28.0 has been released.
 
+As a consequence of this change, the C<analyze_json_logs()> method no longer
+needs a key-value pair like C<run =E<gt> 1> in the hash reference passed to the
+method as argument.
+
 =head1 METHODS
 
 =head2 C<new()>
