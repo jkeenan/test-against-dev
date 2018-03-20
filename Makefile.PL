@@ -9,6 +9,7 @@ WriteMakefile(
     AUTHOR       => 'James E Keenan (jkeenan@cpan.org)',
     ABSTRACT     => 'Test CPAN modules against Perl dev releases',
     MIN_PERL_VERSION => '5.14.0',
+    LICENSE      => 'perl_5',
     PREREQ_PM    => {
                     # core
                     'Carp'                              => 0,
