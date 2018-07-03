@@ -2,8 +2,9 @@
 # t/005-tab-new.t - check module loading and create testing directory
 use strict;
 use warnings;
-
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
+use Carp;
+use Cwd;
 use File::Path 2.15 (qw| make_path |);
 use File::Spec;
 use File::Temp ( qw| tempdir |);
@@ -12,6 +13,7 @@ use Test::More;
 
 BEGIN { use_ok( 'Test::Against::Build' ); }
 
+my $cwd = cwd();
 my $self;
 
 ##### TESTS OF ERROR CONDITIONS #####
@@ -99,6 +101,8 @@ my $self;
     ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
     ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
     ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
+    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bindir);
+    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bindir);
 }
 
 {
@@ -131,7 +135,74 @@ my $self;
     ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
     ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
     ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
+    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bindir);
+    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bindir);
 }
+
+note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against installed 'perl' and 'cpanm'")
+    unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+
+SKIP: {
+    skip 'Test assumes installed perl and cpanm', 18
+        unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+
+    my $good_path = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+    croak "Could not locate '$good_path'" unless (-x $good_path);
+
+    my $tdir2 = tempdir(CLEANUP => 1);
+    setup_test_directories_results_only($tdir2);
+    $self = Test::Against::Build->new({
+        build_tree => $good_path,
+        results_tree => $tdir2,
+    });
+    ok(defined $self, "new() returned defined object");
+    isa_ok($self, 'Test::Against::Build');
+    for my $d ('bin', 'lib', '.cpanm', '.cpanreporter') {
+        my $expected_dir = File::Spec->catdir($good_path, $d);
+        ok(-d $expected_dir, "new() created '$expected_dir' for '$d' as expected");
+    }
+    ok(-d $self->get_build_tree, "get_build_tree() returned " . $self->get_build_tree);
+    ok(-d $self->get_bindir, "get_bindir() returned " . $self->get_bindir);
+    ok(-d $self->get_libdir, "get_libdir() returned " . $self->get_libdir);
+    ok(-d $self->get_cpanmdir, "get_cpanmdir() returned " . $self->get_cpanmdir);
+    ok(-d $self->get_cpanreporterdir, "get_cpanreporterdir() returned " . $self->get_cpanreporterdir);
+    ok(-d $self->get_results_tree, "get_results_tree() returned " . $self->get_results_tree);
+    ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
+    ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
+    ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
+    ok($self->is_perl_built, "perl executable previously installed in " . $self->get_bindir);
+    ok($self->is_cpanm_built, "cpanm executable previously installed in " . $self->get_bindir);
+
+    {
+        note("Testing via 'module_list'");
+        local $@;
+        my $list = [
+            map { File::Spec->catfile($cwd, 't', 'data', $_) }
+            ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+        ];
+        #pp($list);
+
+        # TODO: Add tests which capture verbose output and match it against
+        # expectations.
+
+        #$gzipped_build_log = $self->run_cpanm( {
+        my $rv = $self->run_cpanm( {
+            module_list => $list,
+            title       => 'one-pass-one-fail',
+            verbose     => 1,
+        } );
+        unless ($@) {
+            #pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
+            pass("run_cpanm operated as intended");
+        }
+        else {
+            fail("run_cpanm did not operate as intended: $@");
+        }
+        #ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+    }
+}
+
+#################### TESTING SUBROUTINES ####################
 
 sub setup_test_directories {
     my ($tdir1, $tdir2) = @_;
@@ -140,6 +211,17 @@ sub setup_test_directories {
         File::Spec->catdir($tdir1, 'lib'),
         File::Spec->catdir($tdir1, '.cpanm'),
         File::Spec->catdir($tdir1, '.cpanreporter'),
+        File::Spec->catdir($tdir2, 'analysis'),
+        File::Spec->catdir($tdir2, 'buildlogs'),
+        File::Spec->catdir($tdir2, 'storage'),
+        { mode => 0711 }
+    );
+    return scalar @created;
+}
+
+sub setup_test_directories_results_only {
+    my ($tdir2) = @_;
+    my @created = make_path(
         File::Spec->catdir($tdir2, 'analysis'),
         File::Spec->catdir($tdir2, 'buildlogs'),
         File::Spec->catdir($tdir2, 'storage'),

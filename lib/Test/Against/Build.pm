@@ -14,7 +14,7 @@ use CPAN::cpanminus::reporter::RetainReports;
 use Data::Dump ( qw| dd pp | );
 use JSON;
 use Path::Tiny;
-use Perl::Download::FTP;
+#use Perl::Download::FTP;
 use Text::CSV_XS;
 
 =head1 NAME
@@ -258,6 +258,9 @@ sub new {
         $key =~ s{^\.(.*)}{$1};
         $data->{$key} = (-d $dir) ? $dir : undef;
     }
+	$data->{PERL_CPANM_HOME} = $data->{cpanmdir};
+	$data->{PERL_CPAN_REPORTER_DIR} = $data->{cpanreporterdir};
+
     for my $subdir ( qw| analysis buildlogs storage | ) {
         my $dir = File::Spec->catdir($data->{results_tree}, $subdir);
         unless (-d $dir) {
@@ -267,6 +270,12 @@ sub new {
         my $key = "${subdir}dir";
         $data->{$key} = $dir;
     }
+
+    my $expected_perl = File::Spec->catfile($data->{bindir}, 'perl');
+    $data->{this_perl} = (-e $expected_perl) ? $expected_perl : '';
+
+    my $expected_cpanm = File::Spec->catfile($data->{bindir}, 'cpanm');
+    $data->{this_cpanm} = (-e $expected_cpanm) ? $expected_cpanm : '';
 
     return bless $data, $class;
 }
@@ -309,6 +318,84 @@ sub get_analysisdir { my $self = shift; return $self->{analysisdir}; }
 sub get_buildlogsdir { my $self = shift; return $self->{buildlogsdir}; }
 sub get_storagedir { my $self = shift; return $self->{storagedir}; }
 
+sub get_this_perl {
+    my $self = shift;
+    if (! $self->{this_perl}) {
+        croak "perl has not yet been installed; configure, build and install it";
+    }
+    else {
+        return $self->{this_perl};
+    }
+}
+
+=head2 C<is_perl_built()>
+
+=over 4
+
+=item * Purpose
+
+Determines whether a F<perl> executable has actually been installed in the
+directory returned by C<get_bindir()>.
+
+=item * Arguments
+
+None.
+
+=item * Return Value
+
+C<1> for yes; C<0> for no.
+
+=back
+
+=cut
+
+sub is_perl_built {
+    my $self = shift;
+    if (! $self->{this_perl}) {
+        my $expected_perl = File::Spec->catfile($self->get_bindir, 'perl');
+        $self->{this_perl} = (-e $expected_perl) ? $expected_perl : '';
+    }
+    return ($self->{this_perl}) ? 1 : 0;
+}
+
+sub get_this_cpanm {
+    my $self = shift;
+    if (! $self->{this_cpanm}) {
+        croak "cpanm has not yet been installed; configure, build and install it";
+    }
+    else {
+        return $self->{this_cpanm};
+    }
+}
+
+
+=head2 C<is_cpanm_built()>
+
+=over 4
+
+=item * Purpose
+
+Determines whether a F<cpanm> executable has actually been installed in the
+directory returned by C<get_bindir()>.
+
+=item * Arguments
+
+=item * Return Value
+
+C<1> for yes; C<0> for no.
+
+=back
+
+=cut
+
+sub is_cpanm_built {
+    my $self = shift;
+    if (! $self->{this_cpanm}) {
+        my $expected_cpanm = File::Spec->catfile($self->get_bindir, 'cpanm');
+        $self->{this_cpanm} = (-e $expected_cpanm) ? $expected_cpanm : '';
+    }
+    return ($self->{this_cpanm}) ? 1 : 0;
+}
 
 =head2 C<run_cpanm()>
 
@@ -316,15 +403,178 @@ sub get_storagedir { my $self = shift; return $self->{storagedir}; }
 
 =item * Purpose
 
+Use F<cpanm> to install selected Perl modules against the F<perl> built for
+testing purposes.
+
 =item * Arguments
 
-=item * Return Value
+Two mutually exclusive interfaces:
 
-=item * Comment
+=over 4
+
+=item * Modules provided in a list
+
+    $gzipped_build_log = $self->run_cpanm( {
+        module_list => [ 'DateTime', 'AnyEvent' ],
+        title       => 'two-important-libraries',
+        verbose     => 1,
+    } );
+
+=item * Modules listed in a file
+
+    $gzipped_build_log = $self->run_cpanm( {
+        module_file => '/path/to/cpan-river-file.txt',
+        title       => 'cpan-river-1000',
+        verbose     => 1,
+    } );
+
+=back
+
+Each interface takes a hash reference with the following elements:
+
+=over 4
+
+=item * C<module_list> B<OR> C<module_file>
+
+Mutually exclusive; must use one or the other but not both.
+
+The value of C<module_list> must be an array reference holding a list of
+modules for which you wish to track the impact of changes in the Perl 5 core
+distribution over time.  In either case the module names are spelled in
+C<Some::Module> format -- I<i.e.>, double-colons -- rather than in
+C<Some-Module> format (hyphens).
+
+=item * C<title>
+
+String which will be used to compose the name of project-specific output
+files.  Required.
+
+=item * C<verbose>
+
+Extra information provided on STDOUT.  Optional; defaults to being off;
+provide a Perl-true value to turn it on.  Scope is limited to this method.
+
+=back
 
 =back
 
 =cut
+
+sub run_cpanm {
+    my ($self, $args) = @_;
+    $args //= {};
+    croak "run_cpanm: Must supply hash ref as argument"
+        unless ref($args) eq 'HASH';
+    my $verbose = delete $args->{verbose} || '';
+    my %eligible_args = map { $_ => 1 } ( qw|
+        module_file module_list title
+    | );
+    for my $k (keys %$args) {
+        croak "run_cpanm: '$k' is not a valid element"
+            unless $eligible_args{$k};
+    }
+    if (exists $args->{module_file} and exists $args->{module_list}) {
+        croak "run_cpanm: Supply either a file for 'module_file' or an array ref for 'module_list' but not both";
+    }
+    if ($args->{module_file}) {
+        croak "run_cpanm: Could not locate '$args->{module_file}'"
+            unless (-f $args->{module_file});
+    }
+    if ($args->{module_list}) {
+        croak "run_cpanm: Must supply array ref for 'module_list'"
+            unless ref($args->{module_list}) eq 'ARRAY';
+    }
+
+    unless (defined $args->{title} and length $args->{title}) {
+        croak "Must supply value for 'title' element";
+    }
+    $self->{title} = $args->{title};
+
+#    unless (-d $self->{vresults_dir}) {
+#        $self->setup_results_directories();
+#    }
+#
+#    my $cpanreporter_dir = File::Spec->catdir($self->get_release_dir(), '.cpanreporter');
+#    unless (-d $cpanreporter_dir) { make_path($cpanreporter_dir, { mode => 0755 }); }
+#    croak "Could not locate $cpanreporter_dir" unless (-d $cpanreporter_dir);
+#    $self->{cpanreporter_dir} = $cpanreporter_dir;
+#
+#    unless ($self->{cpanm_dir}) {
+#        say "Defining previously undefined cpanm_dir" if $verbose;
+#        my $cpanm_dir = File::Spec->catdir($self->get_release_dir(), '.cpanm');
+#        unless (-d $cpanm_dir) { make_path($cpanm_dir, { mode => 0755 }); }
+#        croak "Could not locate $cpanm_dir" unless (-d $cpanm_dir);
+#        $self->{cpanm_dir} = $cpanm_dir;
+#    }
+
+    say "cpanm_dir: ", $self->get_cpanmdir() if $verbose;
+    local $ENV{PERL_CPANM_HOME} = $self->{PERL_CPANM_HOME};
+    local $ENV{PERL_CPAN_REPORTER_DIR} = $self->{PERL_CPAN_REPORTER_DIR};
+
+    my @modules = ();
+    if ($args->{module_list}) {
+        @modules = @{$args->{module_list}};
+    }
+    elsif ($args->{module_file}) {
+        @modules = path($args->{module_file})->lines({ chomp => 1 });
+    }
+    my @cmd = (
+        $self->get_this_perl,
+        "-I$self->get_lib_dir",
+        $self->get_this_cpanm,
+        @modules,
+    );
+    eval {
+        local $@;
+        my $rv = system(@cmd);
+        say "<$@>" if $@;
+        if ($verbose) {
+            say $self->get_this_cpanm(), " exited with ", $rv >> 8;
+        }
+    };
+#    my $gzipped_build_log = $self->gzip_cpanm_build_log();
+#    say "See gzipped build.log in $gzipped_build_log" if $verbose;
+#
+#    return $gzipped_build_log;
+
+    my $build_log_link = File::Spec->catfile($self->get_cpanmdir, 'build.log');
+    croak "Did not find symlink for build.log at $build_log_link"
+        unless (-l $build_log_link);
+    my $real_log = readlink($build_log_link);
+    say "build.log: $real_log" if $verbose;
+    return $real_log;
+}
+
+#sub gzip_cpanm_build_log {
+#    my ($self) = @_;
+#    my $build_log_link = File::Spec->catfile($self->get_cpanm_dir, 'build.log');
+#    croak "Did not find symlink for build.log at $build_log_link"
+#        unless (-l $build_log_link);
+#    my $real_log = readlink($build_log_link);
+#
+#    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.build\.log\.gz$/;
+#    $self->{gzlog_pattern} = $pattern;
+#    opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
+#    my @files_found = grep { -f $_ and $_ =~ m/$pattern/ } readdir $DIRH;
+#    closedir $DIRH or croak "Unable to close buildlogs_dir after reading";
+#
+#    # In this new approach, we'll assume that we never do anything except
+#    # exactly 1 run per monthly release.  Hence, there shouldn't be any files
+#    # in this directory whatsoever.  We'll croak if there are such file.
+#    croak "There are already log files in '$self->{buildlogs_dir}'"if scalar(@files_found);
+#
+#    my $gzipped_build_log = join('.' => (
+#        $self->{title},
+#        $self->{perl_version},
+#        'build',
+#        'log',
+#        'gz'
+#    ) );
+#    my $gzlog = File::Spec->catfile($self->{buildlogs_dir}, $gzipped_build_log);
+#    system(qq| gzip -c $real_log > $gzlog |)
+#        and croak "Unable to gzip $real_log to $gzlog";
+#    $self->{gzlog} = $gzlog;
+#}
 
 
 =head2 C<analyze_cpanm_build_logs()>
@@ -345,23 +595,6 @@ sub get_storagedir { my $self = shift; return $self->{storagedir}; }
 
 
 =head2 C<analyze_json_logs()>
-
-=over 4
-
-=item * Purpose
-
-=item * Arguments
-
-=item * Return Value
-
-=item * Comment
-
-=back
-
-=cut
-
-
-=head2 C<new()>
 
 =over 4
 
