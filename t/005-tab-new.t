@@ -1,6 +1,6 @@
 # -*- perl -*-
 # t/005-tab-new.t - check module loading and create testing directory
-use strict;
+use 5.14.0;
 use warnings;
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Carp;
@@ -146,9 +146,11 @@ SKIP: {
     skip 'Test assumes installed perl and cpanm', 18
         unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
-    my $good_path = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
-    croak "Could not locate '$good_path'" unless (-x $good_path);
-
+    my $good_perl = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+    croak "Could not locate '$good_perl'" unless (-x $good_perl);
+    my ($good_path) = $good_perl =~ s{^(.*?)/bin/perl$}{$1}r;
+    #say "XXX: $good_perl";
+    #say "YYY: $good_path";
     my $tdir2 = tempdir(CLEANUP => 1);
     setup_test_directories_results_only($tdir2);
     $self = Test::Against::Build->new({

@@ -217,7 +217,10 @@ SKIP: {
     }
 
     my ($perl_version) = $good_path =~ s{^.*/([^/]*?)/bin/perl$}{$1}r;
-
+    # This test should be run with an installed bin/perl, installed bin/cpanm
+    # and created but empty .cpanm beneath, say, ~/tmp/perl-5.28.0/
+    #say "WWW: $good_path";
+    #say "XXX: $perl_version";
     {
         local $@;
         my $bad_application_dir = catdir('foo', 'bar');
