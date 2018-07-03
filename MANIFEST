@@ -1,4 +1,5 @@
 Changes
+lib/Test/Against/Build.pm
 lib/Test/Against/Dev.pm
 LICENSE
 Makefile.PL
@@ -9,6 +10,7 @@ t/001-new.t
 t/002-perform-tarball-download.t
 t/003-test-against-dev.t
 t/004-new-from-existing.t
+t/005-tab-new.t
 t/data/four-modules.txt
 t/data/two-modules.txt
 Todo
