@@ -4,7 +4,7 @@ use 5.10.1;
 our $VERSION = '0.08';
 use Carp;
 #use Cwd;
-#use File::Basename;
+use File::Basename;
 #use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
@@ -490,23 +490,6 @@ sub run_cpanm {
     }
     $self->{title} = $args->{title};
 
-#    unless (-d $self->{vresults_dir}) {
-#        $self->setup_results_directories();
-#    }
-#
-#    my $cpanreporter_dir = File::Spec->catdir($self->get_release_dir(), '.cpanreporter');
-#    unless (-d $cpanreporter_dir) { make_path($cpanreporter_dir, { mode => 0755 }); }
-#    croak "Could not locate $cpanreporter_dir" unless (-d $cpanreporter_dir);
-#    $self->{cpanreporter_dir} = $cpanreporter_dir;
-#
-#    unless ($self->{cpanm_dir}) {
-#        say "Defining previously undefined cpanm_dir" if $verbose;
-#        my $cpanm_dir = File::Spec->catdir($self->get_release_dir(), '.cpanm');
-#        unless (-d $cpanm_dir) { make_path($cpanm_dir, { mode => 0755 }); }
-#        croak "Could not locate $cpanm_dir" unless (-d $cpanm_dir);
-#        $self->{cpanm_dir} = $cpanm_dir;
-#    }
-
     say "cpanm_dir: ", $self->get_cpanmdir() if $verbose;
     local $ENV{PERL_CPANM_HOME} = $self->{PERL_CPANM_HOME};
     local $ENV{PERL_CPAN_REPORTER_DIR} = $self->{PERL_CPAN_REPORTER_DIR};
@@ -532,49 +515,35 @@ sub run_cpanm {
             say $self->get_this_cpanm(), " exited with ", $rv >> 8;
         }
     };
-#    my $gzipped_build_log = $self->gzip_cpanm_build_log();
-#    say "See gzipped build.log in $gzipped_build_log" if $verbose;
-#
-#    return $gzipped_build_log;
+    my $gzipped_build_log = $self->gzip_cpanm_build_log();
+    say "See gzipped build.log in $gzipped_build_log" if $verbose;
 
+    return $gzipped_build_log;
+
+}
+
+sub gzip_cpanm_build_log {
+    my ($self) = @_;
     my $build_log_link = File::Spec->catfile($self->get_cpanmdir, 'build.log');
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
-    say "build.log: $real_log" if $verbose;
-    return $real_log;
-}
 
-#sub gzip_cpanm_build_log {
-#    my ($self) = @_;
-#    my $build_log_link = File::Spec->catfile($self->get_cpanm_dir, 'build.log');
-#    croak "Did not find symlink for build.log at $build_log_link"
-#        unless (-l $build_log_link);
-#    my $real_log = readlink($build_log_link);
-#
-#    my $pattern = qr/^$self->{title}\.$self->{perl_version}\.build\.log\.gz$/;
-#    $self->{gzlog_pattern} = $pattern;
-#    opendir my $DIRH, $self->{buildlogs_dir} or croak "Unable to open buildlogs_dir for reading";
-#    my @files_found = grep { -f $_ and $_ =~ m/$pattern/ } readdir $DIRH;
-#    closedir $DIRH or croak "Unable to close buildlogs_dir after reading";
-#
-#    # In this new approach, we'll assume that we never do anything except
-#    # exactly 1 run per monthly release.  Hence, there shouldn't be any files
-#    # in this directory whatsoever.  We'll croak if there are such file.
-#    croak "There are already log files in '$self->{buildlogs_dir}'"if scalar(@files_found);
-#
-#    my $gzipped_build_log = join('.' => (
-#        $self->{title},
-#        $self->{perl_version},
-#        'build',
-#        'log',
-#        'gz'
-#    ) );
-#    my $gzlog = File::Spec->catfile($self->{buildlogs_dir}, $gzipped_build_log);
-#    system(qq| gzip -c $real_log > $gzlog |)
-#        and croak "Unable to gzip $real_log to $gzlog";
-#    $self->{gzlog} = $gzlog;
-#}
+    my $gzipped_build_log_filename = join('.' => (
+        $self->{title},
+        (File::Spec->splitdir(dirname($real_log)))[-1],
+        'build',
+        'log',
+        'gz'
+    ) );
+    my $gzlog = File::Spec->catfile(
+        $self->get_buildlogsdir,
+        $gzipped_build_log_filename,
+    );
+    system(qq| gzip -c $real_log > $gzlog |)
+        and croak "Unable to gzip $real_log to $gzlog";
+    $self->{gzlog} = $gzlog;
+}
 
 
 =head2 C<analyze_cpanm_build_logs()>

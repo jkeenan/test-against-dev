@@ -187,8 +187,7 @@ SKIP: {
         # TODO: Add tests which capture verbose output and match it against
         # expectations.
 
-        #$gzipped_build_log = $self->run_cpanm( {
-        my $rv = $self->run_cpanm( {
+        my $gzipped_build_log = $self->run_cpanm( {
             module_list => $list,
             title       => 'one-pass-one-fail',
             verbose     => 1,
@@ -200,7 +199,7 @@ SKIP: {
         else {
             fail("run_cpanm did not operate as intended: $@");
         }
-        #ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
     }
 }
 
@@ -232,32 +231,6 @@ sub setup_test_directories_results_only {
     return scalar @created;
 }
 
-#    local $@;
-#    my $phony_dir = '/foo';
-#    eval { $self = Test::Against::Build->new({ application_dir => $phony_dir }); };
-#    like($@, qr/Could not locate $phony_dir/,
-#        "new: Got expected error message; 'application_dir' not found");
-#}
-#
-#$self = Test::Against::Build->new( {
-#    application_dir         => $tdir,
-#} );
-#isa_ok ($self, 'Test::Against::Build');
-#
-#my $top_dir = $self->get_application_dir;
-#is($top_dir, $tdir, "Located top-level directory $top_dir");
-#
-#for my $dir ( qw| testing results | ) {
-#    my $fdir = File::Spec->catdir($top_dir, $dir);
-#    ok(-d $fdir, "Located $fdir");
-#}
-#my $testing_dir = $self->get_testing_dir;
-#my $results_dir = $self->get_results_dir;
-#ok(-d $testing_dir, "Got testing directory: $testing_dir");
-#ok(-d $results_dir, "Got results directory: $results_dir");
-#
-#can_ok('Test::Against::Build', 'configure_build_install_perl');
-#can_ok('Test::Against::Build', 'fetch_cpanm');
 
 done_testing();
 
