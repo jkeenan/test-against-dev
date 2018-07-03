@@ -462,9 +462,8 @@ provide a Perl-true value to turn it on.  Scope is limited to this method.
 
 sub run_cpanm {
     my ($self, $args) = @_;
-    $args //= {};
     croak "run_cpanm: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
     my %eligible_args = map { $_ => 1 } ( qw|
         module_file module_list title

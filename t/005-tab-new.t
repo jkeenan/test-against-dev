@@ -7,7 +7,7 @@ use Carp;
 use Cwd;
 use File::Path 2.15 (qw| make_path |);
 use File::Spec;
-use File::Temp ( qw| tempdir |);
+use File::Temp ( qw| tempfile tempdir |);
 use Test::More;
 #use Data::Dump ( qw| dd pp | );
 
@@ -16,13 +16,20 @@ BEGIN { use_ok( 'Test::Against::Build' ); }
 my $cwd = cwd();
 my $self;
 
-##### TESTS OF ERROR CONDITIONS #####
+##### new(): TESTS OF ERROR CONDITIONS #####
 
 {
     local $@;
     eval { $self = Test::Against::Build->new([]); };
     like($@, qr/Argument to constructor must be hashref/,
         "new: Got expected error message for non-hashref argument");
+}
+
+{
+    local $@;
+    eval { $self = Test::Against::Build->new(); };
+    like($@, qr/Argument to constructor must be hashref/,
+        "new: Got expected error message for no argument");
 }
 
 {
@@ -76,7 +83,7 @@ my $self;
         "new: Got expected error message; 'build_tree' and 'results_tree' are same directory");
 }
 
-##### TESTS OF CORRECTLY BUILT OBJECTS #####
+##### new(): TESTS OF CORRECTLY BUILT OBJECTS #####
 
 {
     my $tdir1 = tempdir(CLEANUP => 1);
@@ -142,15 +149,19 @@ my $self;
 note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against installed 'perl' and 'cpanm'")
     unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
+# Must set above envvar to a complete path ending in /bin/perl.
+
+##### run_cpanm(): TESTS AGAINST PRE-INSTALLED perl #####
+
 SKIP: {
-    skip 'Test assumes installed perl and cpanm', 18
+    skip 'Test assumes installed perl and cpanm', 44
         unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
+
+    note("Testing against pre-installed perl executable");
 
     my $good_perl = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
     croak "Could not locate '$good_perl'" unless (-x $good_perl);
     my ($good_path) = $good_perl =~ s{^(.*?)/bin/perl$}{$1}r;
-    #say "XXX: $good_perl";
-    #say "YYY: $good_path";
     my $tdir2 = tempdir(CLEANUP => 1);
     setup_test_directories_results_only($tdir2);
     $self = Test::Against::Build->new({
@@ -176,7 +187,83 @@ SKIP: {
     ok($self->is_cpanm_built, "cpanm executable previously installed in " . $self->get_bindir);
 
     {
-        note("Testing via 'module_list'");
+        note("run_cpanm(): Error conditions");
+        {
+            local $@;
+            eval { $self->run_cpanm( [ module_file => 'foo', title => 'not-cpan-river' ] ); };
+            like($@, qr/run_cpanm: Must supply hash ref as argument/,
+                "Got expected error message: absence of hashref");
+        }
+
+        {
+            local $@;
+            my $bad_element = 'foo';
+            eval { $self->run_cpanm( { $bad_element => 'bar', title => 'not-cpan-river' } ); };
+            like($@, qr/run_cpanm: '$bad_element' is not a valid element/,
+                "Got expected error message: bad argument");
+        }
+
+        {
+            local $@;
+            eval { $self->run_cpanm( {
+                module_file => 'foo',
+                module_list => [ 'Foo::Bar', 'Alpha::Beta' ],
+                title => 'not-cpan-river',
+            } ); };
+            like($@, qr/run_cpanm: Supply either a file for 'module_file' or an array ref for 'module_list' but not both/,
+                "Got expected error message: bad mixture of arguments");
+        }
+
+        {
+            local $@;
+            my $bad_module_file = 'foo';
+            eval { $self->run_cpanm( { module_file => $bad_module_file, title => 'not-cpan-river' } ); };
+            like($@, qr/run_cpanm: Could not locate '$bad_module_file'/,
+                "Got expected error message: module_file not found");
+        }
+
+        {
+            local $@;
+            eval { $self->run_cpanm( { module_list => "Foo::Bar", title => 'not-cpan-river' } ); };
+            like($@, qr/run_cpanm: Must supply array ref for 'module_list'/,
+                "Got expected error message: value for module_list not an array ref");
+        }
+
+        {
+            local $@;
+            my $list = [
+                map { File::Spec->catfile($cwd, 't', 'data', $_) }
+                ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+            ];
+            eval {
+                $self->run_cpanm( {
+                    module_list => $list,
+                    title => undef,
+                } );
+            };
+            like($@, qr/Must supply value for 'title' element/,
+                "Got expected error message: value for title is not defined");
+        }
+
+        {
+            local $@;
+            my $list = [
+                map { File::Spec->catfile($cwd, 't', 'data', $_) }
+                ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+            ];
+            eval {
+                $self->run_cpanm( {
+                    module_list => $list,
+                    title => '',
+                } );
+            };
+            like($@, qr/Must supply value for 'title' element/,
+                "Got expected error message: value for title is empty string");
+        }
+    }
+
+    {
+        note("run_cpanm(): Testing via 'module_list'");
         local $@;
         my $list = [
             map { File::Spec->catfile($cwd, 't', 'data', $_) }
@@ -187,17 +274,52 @@ SKIP: {
         # TODO: Add tests which capture verbose output and match it against
         # expectations.
 
-        my $gzipped_build_log = $self->run_cpanm( {
-            module_list => $list,
-            title       => 'one-pass-one-fail',
-            verbose     => 1,
-        } );
+        my $gzipped_build_log;
+        my $stdout = capture_stdout {
+            $gzipped_build_log = $self->run_cpanm( {
+                module_list => $list,
+                title       => 'one-pass-one-fail',
+                verbose     => 1,
+            } );
+        };
         unless ($@) {
-            #pass("run_cpanm operated as intended; see $expected_log for PASS/FAIL/etc.");
-            pass("run_cpanm operated as intended");
+            pass("run_cpanm operated as intended; see $gzipped_build_log for PASS/FAIL/etc.");
         }
         else {
             fail("run_cpanm did not operate as intended: $@");
+        }
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+        like($stdout,
+            qr/cpanm_dir:.*?\.cpanm/s,
+            "run_cpanm(): Got expected verbose output: cpanm_dir"
+        );
+        like($stdout,
+            qr/See gzipped build.log in $gzipped_build_log/s,
+            "run_cpanm(): Got expected verbose output: build.log"
+        );
+    }
+
+    {
+        note("run_cpanm(): Testing via 'module_file'");
+        local $@;
+        my $list = [
+            map { File::Spec->catfile($cwd, 't', 'data', $_) }
+            ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
+        ];
+        my ($IN, $file) = tempfile('005_files_for_cpanm_XXXXX', UNLINK => 1);
+        open $IN, '>', $file or croak "Could not open $file for writing";
+        say $IN $_ for @{$list};
+        close $IN or croak "Could not close $file after writing";
+        ok(-f $file, "Located $file for testing");
+        my $gzipped_build_log = $self->run_cpanm( {
+            module_file => $file,
+            title       => 'second-one-pass-one-fail',
+        } );
+        unless ($@) {
+            pass("run_cpanm operated as intended; see $gzipped_build_log for PASS/FAIL/etc.");
+        }
+        else {
+            fail("run_cpanm did not operate as intended");
         }
         ok(-f $gzipped_build_log, "Located $gzipped_build_log");
     }
