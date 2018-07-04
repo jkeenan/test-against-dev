@@ -292,7 +292,7 @@ The following accessors return the absolute path to the directories in their nam
 
 =item * C<get_cpanreporter_dir()>
 
-=item * C<get_results_dir()>
+=item * C<get_results_tree()>
 
 =item * C<get_analysis_dir()>
 
