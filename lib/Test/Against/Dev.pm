@@ -16,6 +16,7 @@ use JSON;
 use Path::Tiny;
 use Perl::Download::FTP;
 use Text::CSV_XS;
+use Test::Against::Build;
 
 =head1 NAME
 
@@ -322,7 +323,7 @@ two directories:  F<testing> and F<results>.
 
 =cut
 
-our $PERL_VERSION_PATTERN = qr/^perl-5\.\d+\.\d{1,2}$/;
+our $PERL_VERSION_PATTERN = qr/^perl-5\.\d+\.\d{1,2}(?:-RC\d{1,2})?$/;
 
 sub new {
     my ($class, $args) = @_;

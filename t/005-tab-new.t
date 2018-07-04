@@ -99,16 +99,16 @@ my $self;
         ok(-d $expected_dir, "new() created '$expected_dir' for '$d' as expected");
     }
     ok(-d $self->get_build_tree, "get_build_tree() returned " . $self->get_build_tree);
-    ok(-d $self->get_bindir, "get_bindir() returned " . $self->get_bindir);
-    ok(-d $self->get_libdir, "get_libdir() returned " . $self->get_libdir);
-    ok(-d $self->get_cpanmdir, "get_cpanmdir() returned " . $self->get_cpanmdir);
-    ok(-d $self->get_cpanreporterdir, "get_cpanreporterdir() returned " . $self->get_cpanreporterdir);
+    ok(-d $self->get_bin_dir, "get_bin_dir() returned " . $self->get_bin_dir);
+    ok(-d $self->get_lib_dir, "get_lib_dir() returned " . $self->get_lib_dir);
+    ok(-d $self->get_cpanm_dir, "get_cpanm_dir() returned " . $self->get_cpanm_dir);
+    ok(-d $self->get_cpanreporter_dir, "get_cpanreporter_dir() returned " . $self->get_cpanreporter_dir);
     ok(-d $self->get_results_tree, "get_results_tree() returned " . $self->get_results_tree);
-    ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
-    ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
-    ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
-    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bindir);
-    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bindir);
+    ok(-d $self->get_analysis_dir, "get_analysis_dir() returned " . $self->get_analysis_dir);
+    ok(-d $self->get_buildlogs_dir, "get_buildlogs_dir() returned " . $self->get_buildlogs_dir);
+    ok(-d $self->get_storage_dir, "get_storage_dir() returned " . $self->get_storage_dir);
+    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bin_dir);
+    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bin_dir);
 }
 
 {
@@ -133,16 +133,16 @@ my $self;
         "Got expected verbose output"
     );
     ok(-d $self->get_build_tree, "get_build_tree() returned " . $self->get_build_tree);
-    ok(-d $self->get_bindir, "get_bindir() returned " . $self->get_bindir);
-    ok(-d $self->get_libdir, "get_libdir() returned " . $self->get_libdir);
-    ok(-d $self->get_cpanmdir, "get_cpanmdir() returned " . $self->get_cpanmdir);
-    ok(-d $self->get_cpanreporterdir, "get_cpanreporterdir() returned " . $self->get_cpanreporterdir);
+    ok(-d $self->get_bin_dir, "get_bin_dir() returned " . $self->get_bin_dir);
+    ok(-d $self->get_lib_dir, "get_lib_dir() returned " . $self->get_lib_dir);
+    ok(-d $self->get_cpanm_dir, "get_cpanm_dir() returned " . $self->get_cpanm_dir);
+    ok(-d $self->get_cpanreporter_dir, "get_cpanreporter_dir() returned " . $self->get_cpanreporter_dir);
     ok(-d $self->get_results_tree, "get_results_tree() returned " . $self->get_results_tree);
-    ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
-    ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
-    ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
-    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bindir);
-    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bindir);
+    ok(-d $self->get_analysis_dir, "get_analysis_dir() returned " . $self->get_analysis_dir);
+    ok(-d $self->get_buildlogs_dir, "get_buildlogs_dir() returned " . $self->get_buildlogs_dir);
+    ok(-d $self->get_storage_dir, "get_storage_dir() returned " . $self->get_storage_dir);
+    ok(! $self->is_perl_built, "perl executable not yet installed in " . $self->get_bin_dir);
+    ok(! $self->is_cpanm_built, "cpanm executable not yet installed in " . $self->get_bin_dir);
 }
 
 note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against installed 'perl' and 'cpanm'")
@@ -174,16 +174,16 @@ SKIP: {
         ok(-d $expected_dir, "new() created '$expected_dir' for '$d' as expected");
     }
     ok(-d $self->get_build_tree, "get_build_tree() returned " . $self->get_build_tree);
-    ok(-d $self->get_bindir, "get_bindir() returned " . $self->get_bindir);
-    ok(-d $self->get_libdir, "get_libdir() returned " . $self->get_libdir);
-    ok(-d $self->get_cpanmdir, "get_cpanmdir() returned " . $self->get_cpanmdir);
-    ok(-d $self->get_cpanreporterdir, "get_cpanreporterdir() returned " . $self->get_cpanreporterdir);
+    ok(-d $self->get_bin_dir, "get_bin_dir() returned " . $self->get_bin_dir);
+    ok(-d $self->get_lib_dir, "get_lib_dir() returned " . $self->get_lib_dir);
+    ok(-d $self->get_cpanm_dir, "get_cpanm_dir() returned " . $self->get_cpanm_dir);
+    ok(-d $self->get_cpanreporter_dir, "get_cpanreporter_dir() returned " . $self->get_cpanreporter_dir);
     ok(-d $self->get_results_tree, "get_results_tree() returned " . $self->get_results_tree);
-    ok(-d $self->get_analysisdir, "get_analysisdir() returned " . $self->get_analysisdir);
-    ok(-d $self->get_buildlogsdir, "get_buildlogsdir() returned " . $self->get_buildlogsdir);
-    ok(-d $self->get_storagedir, "get_storagedir() returned " . $self->get_storagedir);
-    ok($self->is_perl_built, "perl executable previously installed in " . $self->get_bindir);
-    ok($self->is_cpanm_built, "cpanm executable previously installed in " . $self->get_bindir);
+    ok(-d $self->get_analysis_dir, "get_analysis_dir() returned " . $self->get_analysis_dir);
+    ok(-d $self->get_buildlogs_dir, "get_buildlogs_dir() returned " . $self->get_buildlogs_dir);
+    ok(-d $self->get_storage_dir, "get_storage_dir() returned " . $self->get_storage_dir);
+    ok($self->is_perl_built, "perl executable previously installed in " . $self->get_bin_dir);
+    ok($self->is_cpanm_built, "cpanm executable previously installed in " . $self->get_bin_dir);
 
     {
         note("run_cpanm(): Error conditions");
@@ -288,8 +288,8 @@ SKIP: {
         }
         ok(-f $gzipped_build_log, "Located $gzipped_build_log");
         like($stdout,
-            qr/cpanmdir:.*?\.cpanm/s,
-            "run_cpanm(): Got expected verbose output: cpanmdir"
+            qr/cpanm_dir:.*?\.cpanm/s,
+            "run_cpanm(): Got expected verbose output: cpanm_dir"
         );
         like($stdout,
             qr/See gzipped build.log in $gzipped_build_log/s,
@@ -353,7 +353,7 @@ SKIP: {
         "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
     like($stdout,
         qr/See results in $ranalysis_dir/s,
-        "analyze_cpanm_build_logs(): Got expected verbose output: cpanmdir"
+        "analyze_cpanm_build_logs(): Got expected verbose output: cpanm_dir"
     );
 
     note("analyze_json_logs()");

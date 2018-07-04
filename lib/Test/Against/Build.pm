@@ -245,17 +245,17 @@ sub new {
 
     for my $subdir ( 'bin', 'lib' ) {
         my $dir = File::Spec->catdir($data->{build_tree}, $subdir);
-        my $key = "${subdir}dir";
+        my $key = "${subdir}_dir";
         $data->{$key} = (-d $dir) ? $dir : undef;
     }
     for my $subdir ( '.cpanm', '.cpanreporter' ) {
         my $dir = File::Spec->catdir($data->{build_tree}, $subdir);
-        my $key = "${subdir}dir";
+        my $key = "${subdir}_dir";
         $key =~ s{^\.(.*)}{$1};
         $data->{$key} = (-d $dir) ? $dir : undef;
     }
-	$data->{PERL_CPANM_HOME} = $data->{cpanmdir};
-	$data->{PERL_CPAN_REPORTER_DIR} = $data->{cpanreporterdir};
+	$data->{PERL_CPANM_HOME} = $data->{cpanm_dir};
+	$data->{PERL_CPAN_REPORTER_DIR} = $data->{cpanreporter_dir};
 
     for my $subdir ( qw| analysis buildlogs storage | ) {
         my $dir = File::Spec->catdir($data->{results_tree}, $subdir);
@@ -263,14 +263,14 @@ sub new {
             my @created = make_path($dir, { mode => 0711 })
                 or croak "Unable to make_path '$dir'";
         }
-        my $key = "${subdir}dir";
+        my $key = "${subdir}_dir";
         $data->{$key} = $dir;
     }
 
-    my $expected_perl = File::Spec->catfile($data->{bindir}, 'perl');
+    my $expected_perl = File::Spec->catfile($data->{bin_dir}, 'perl');
     $data->{this_perl} = (-e $expected_perl) ? $expected_perl : '';
 
-    my $expected_cpanm = File::Spec->catfile($data->{bindir}, 'cpanm');
+    my $expected_cpanm = File::Spec->catfile($data->{bin_dir}, 'cpanm');
     $data->{this_cpanm} = (-e $expected_cpanm) ? $expected_cpanm : '';
 
     return bless $data, $class;
@@ -284,35 +284,35 @@ The following accessors return the absolute path to the directories in their nam
 
 =item * C<get_build_tree()>
 
-=item * C<get_bindir()>
+=item * C<get_bin_dir()>
 
-=item * C<get_libdir()>
+=item * C<get_lib_dir()>
 
-=item * C<get_cpanmdir()>
+=item * C<get_cpanm_dir()>
 
-=item * C<get_cpanreporterdir()>
+=item * C<get_cpanreporter_dir()>
 
 =item * C<get_results_dir()>
 
-=item * C<get_analysisdir()>
+=item * C<get_analysis_dir()>
 
-=item * C<get_buildlogsdir()>
+=item * C<get_buildlogs_dir()>
 
-=item * C<get_storagedir()>
+=item * C<get_storage_dir()>
 
 =back
 
 =cut
 
 sub get_build_tree { my $self = shift; return $self->{build_tree}; }
-sub get_bindir { my $self = shift; return $self->{bindir}; }
-sub get_libdir { my $self = shift; return $self->{libdir}; }
-sub get_cpanmdir { my $self = shift; return $self->{cpanmdir}; }
-sub get_cpanreporterdir { my $self = shift; return $self->{cpanreporterdir}; }
+sub get_bin_dir { my $self = shift; return $self->{bin_dir}; }
+sub get_lib_dir { my $self = shift; return $self->{lib_dir}; }
+sub get_cpanm_dir { my $self = shift; return $self->{cpanm_dir}; }
+sub get_cpanreporter_dir { my $self = shift; return $self->{cpanreporter_dir}; }
 sub get_results_tree { my $self = shift; return $self->{results_tree}; }
-sub get_analysisdir { my $self = shift; return $self->{analysisdir}; }
-sub get_buildlogsdir { my $self = shift; return $self->{buildlogsdir}; }
-sub get_storagedir { my $self = shift; return $self->{storagedir}; }
+sub get_analysis_dir { my $self = shift; return $self->{analysis_dir}; }
+sub get_buildlogs_dir { my $self = shift; return $self->{buildlogs_dir}; }
+sub get_storage_dir { my $self = shift; return $self->{storage_dir}; }
 
 sub get_this_perl {
     my $self = shift;
@@ -331,7 +331,7 @@ sub get_this_perl {
 =item * Purpose
 
 Determines whether a F<perl> executable has actually been installed in the
-directory returned by C<get_bindir()>.
+directory returned by C<get_bin_dir()>.
 
 =item * Arguments
 
@@ -348,7 +348,7 @@ C<1> for yes; C<0> for no.
 sub is_perl_built {
     my $self = shift;
     if (! $self->{this_perl}) {
-        my $expected_perl = File::Spec->catfile($self->get_bindir, 'perl');
+        my $expected_perl = File::Spec->catfile($self->get_bin_dir, 'perl');
         $self->{this_perl} = (-e $expected_perl) ? $expected_perl : '';
     }
     return ($self->{this_perl}) ? 1 : 0;
@@ -372,7 +372,7 @@ sub get_this_cpanm {
 =item * Purpose
 
 Determines whether a F<cpanm> executable has actually been installed in the
-directory returned by C<get_bindir()>.
+directory returned by C<get_bin_dir()>.
 
 =item * Arguments
 
@@ -387,7 +387,7 @@ C<1> for yes; C<0> for no.
 sub is_cpanm_built {
     my $self = shift;
     if (! $self->{this_cpanm}) {
-        my $expected_cpanm = File::Spec->catfile($self->get_bindir, 'cpanm');
+        my $expected_cpanm = File::Spec->catfile($self->get_bin_dir, 'cpanm');
         $self->{this_cpanm} = (-e $expected_cpanm) ? $expected_cpanm : '';
     }
     return ($self->{this_cpanm}) ? 1 : 0;
@@ -493,14 +493,14 @@ sub run_cpanm {
             make_path($dir, { mode => 0711 })
                 or croak "Unable to make_path $dir";
         }
-        my $key = "${subdir}dir";
+        my $key = "${subdir}_dir";
         $key =~ s{^\.(.*)}{$1};
         $self->{$key} = $dir;
     }
-	$self->{PERL_CPANM_HOME} = $self->{cpanmdir};
-	$self->{PERL_CPAN_REPORTER_DIR} = $self->{cpanreporterdir};
+	$self->{PERL_CPANM_HOME} = $self->{cpanm_dir};
+	$self->{PERL_CPAN_REPORTER_DIR} = $self->{cpanreporter_dir};
 
-    say "cpanmdir: ", $self->get_cpanmdir() if $verbose;
+    say "cpanm_dir: ", $self->get_cpanm_dir() if $verbose;
     local $ENV{PERL_CPANM_HOME} = $self->{PERL_CPANM_HOME};
     local $ENV{PERL_CPAN_REPORTER_DIR} = $self->{PERL_CPAN_REPORTER_DIR};
 
@@ -534,7 +534,7 @@ sub run_cpanm {
 
 sub gzip_cpanm_build_log {
     my ($self) = @_;
-    my $build_log_link = File::Spec->catfile($self->get_cpanmdir, 'build.log');
+    my $build_log_link = File::Spec->catfile($self->get_cpanm_dir, 'build.log');
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
@@ -549,7 +549,7 @@ sub gzip_cpanm_build_log {
         'gz'
     ) );
     my $gzlog = File::Spec->catfile(
-        $self->get_buildlogsdir,
+        $self->get_buildlogs_dir,
         $gzipped_build_log_filename,
     );
     system(qq| gzip -c $real_log > $gzlog |)
@@ -599,7 +599,7 @@ sub analyze_cpanm_build_logs {
     my $reporter = CPAN::cpanminus::reporter::RetainReports->new(
       force => 1, # ignore mtime check on build.log
       build_logfile => $working_log,
-      build_dir => $self->get_cpanmdir,
+      build_dir => $self->get_cpanm_dir,
       'ignore-versions' => 1,
     );
     croak "Unable to create new reporter for $working_log"
@@ -607,7 +607,7 @@ sub analyze_cpanm_build_logs {
     no warnings 'redefine';
     local *CPAN::cpanminus::reporter::RetainReports::_check_cpantesters_config_data = sub { 1 };
     #$reporter->set_report_dir($ranalysis_dir);
-    my $ranalysis_dir = $self->get_analysisdir;
+    my $ranalysis_dir = $self->get_analysis_dir;
     $reporter->set_report_dir($ranalysis_dir);
     $reporter->run;
     say "See results in $ranalysis_dir" if $verbose;
@@ -650,10 +650,10 @@ sub analyze_json_logs {
         'json',
         'gz'
     ) );
-    my $foutput = File::Spec->catfile($self->get_storagedir(), $output);
+    my $foutput = File::Spec->catfile($self->get_storage_dir(), $output);
     say "Output will be: $foutput" if $verbose;
 
-    my $vranalysis_dir = $self->get_analysisdir;
+    my $vranalysis_dir = $self->get_analysis_dir;
     opendir my $DIRH, $vranalysis_dir or croak "Unable to open $vranalysis_dir for reading";
     my @json_log_files = sort map { File::Spec->catfile('analysis', $_) }
         grep { m/\.log\.json$/ } readdir $DIRH;
@@ -701,7 +701,7 @@ sub analyze_json_logs {
         (($sep_char eq ',') ? 'csv' : 'psv'),
     ) );
 
-    my $fcdvfile = File::Spec->catfile($self->get_storagedir(), $cdvfile);
+    my $fcdvfile = File::Spec->catfile($self->get_storage_dir(), $cdvfile);
     say "Output will be: $fcdvfile" if $verbose;
 
     my @fields = ( qw| author distname distversion grade | );
