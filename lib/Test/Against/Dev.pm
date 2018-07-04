@@ -645,9 +645,8 @@ C<$self->get_lib_dir()>, respectively.
 sub configure_build_install_perl {
     my ($self, $args) = @_;
     my $cwd = cwd();
-    $args //= {};
     croak "configure_build_install_perl: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
 
     # What I want in terms of verbose output:
@@ -777,9 +776,8 @@ subsequently be accessed by calling C<$self->get_cpanm_dir()>.
 
 sub fetch_cpanm {
     my ($self, $args) = @_;
-    $args //= {};
     croak "fetch_cpanm: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
     my $uri = (exists $args->{uri} and length $args->{uri})
         ? $args->{uri}
@@ -1078,9 +1076,8 @@ particular run of C<run_cpanm()>.
 
 sub analyze_cpanm_build_logs {
     my ($self, $args) = @_;
-    $args //= {};
     croak "analyze_cpanm_build_logs: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
 
     my $gzlog = $self->{gzlog};
@@ -1155,9 +1152,8 @@ files for a given run.
 
 sub analyze_json_logs {
     my ($self, $args) = @_;
-    $args //= {};
     croak "analyze_json_logs: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
     my $sep_char = delete $args->{sep_char} || '|';
     croak "analyze_json_logs: Currently only pipe ('|') and comma (',') are supported as delimiter characters"
@@ -1314,9 +1310,8 @@ C<fetch_cpanm()> and go directly to C<run_cpanm()>.
 
 sub new_from_existing_perl_cpanm {
     my ($class, $args) = @_;
-    $args //= {};
     croak "new_from_existing_perl_cpanm: Must supply hash ref as argument"
-        unless ref($args) eq 'HASH';
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
     my $verbose = delete $args->{verbose} || '';
     for my $el ( qw| path_to_perl application_dir perl_version | ) {
         croak "Need '$el' element in arguments hash ref"
