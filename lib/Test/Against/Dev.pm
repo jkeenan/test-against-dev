@@ -1154,8 +1154,8 @@ sub analyze_json_logs {
     my ($self, $args) = @_;
     croak "analyze_json_logs: Must supply hash ref as argument"
         unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
-    my $verbose = delete $args->{verbose} || '';
-    my $sep_char = delete $args->{sep_char} || '|';
+    my $verbose     = delete $args->{verbose}   || '';
+    my $sep_char    = delete $args->{sep_char}  || '|';
     croak "analyze_json_logs: Currently only pipe ('|') and comma (',') are supported as delimiter characters"
         unless ($sep_char eq '|' or $sep_char eq ',');
 
