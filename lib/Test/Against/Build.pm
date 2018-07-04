@@ -485,6 +485,21 @@ sub run_cpanm {
     }
     $self->{title} = $args->{title};
 
+    # At this point, we must have real .cpanm and .cpanreporter directories
+
+    for my $subdir ( '.cpanm', '.cpanreporter' ) {
+        my $dir = File::Spec->catdir($self->get_build_tree(), $subdir);
+        unless (-d $dir) {
+            make_path($dir, { mode => 0711 })
+                or croak "Unable to make_path $dir";
+        }
+        my $key = "${subdir}dir";
+        $key =~ s{^\.(.*)}{$1};
+        $self->{$key} = $dir;
+    }
+	$self->{PERL_CPANM_HOME} = $self->{cpanmdir};
+	$self->{PERL_CPAN_REPORTER_DIR} = $self->{cpanreporterdir};
+
     say "cpanmdir: ", $self->get_cpanmdir() if $verbose;
     local $ENV{PERL_CPANM_HOME} = $self->{PERL_CPANM_HOME};
     local $ENV{PERL_CPAN_REPORTER_DIR} = $self->{PERL_CPAN_REPORTER_DIR};

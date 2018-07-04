@@ -4,7 +4,7 @@
 /Makefile.old
 /Test-Against-Dev-*.tar.gz
 /MYMETA.yml
-/MYMETA.json
+/MYMETA.json*
 /blib
 /pm_to_blib
 /cover_db/
