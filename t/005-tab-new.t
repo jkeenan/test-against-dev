@@ -9,7 +9,6 @@ use File::Path 2.15 (qw| make_path |);
 use File::Spec;
 use File::Temp ( qw| tempfile tempdir |);
 use Test::More;
-#use Data::Dump ( qw| dd pp | );
 
 BEGIN { use_ok( 'Test::Against::Build' ); }
 
@@ -154,7 +153,7 @@ note("Set PERL_AUTHOR_TESTING_INSTALLED_PERL to run additional tests against ins
 ##### run_cpanm(): TESTS AGAINST PRE-INSTALLED perl #####
 
 SKIP: {
-    skip 'Test assumes installed perl and cpanm', 44
+    skip 'Test assumes installed perl and cpanm', 55
         unless $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
 
     note("Testing against pre-installed perl executable");
@@ -269,7 +268,6 @@ SKIP: {
             map { File::Spec->catfile($cwd, 't', 'data', $_) }
             ( qw| Phony-PASS-0.01.tar.gz Phony-FAIL-0.01.tar.gz  | )
         ];
-        #pp($list);
 
         # TODO: Add tests which capture verbose output and match it against
         # expectations.
@@ -290,8 +288,8 @@ SKIP: {
         }
         ok(-f $gzipped_build_log, "Located $gzipped_build_log");
         like($stdout,
-            qr/cpanm_dir:.*?\.cpanm/s,
-            "run_cpanm(): Got expected verbose output: cpanm_dir"
+            qr/cpanmdir:.*?\.cpanm/s,
+            "run_cpanm(): Got expected verbose output: cpanmdir"
         );
         like($stdout,
             qr/See gzipped build.log in $gzipped_build_log/s,
@@ -323,6 +321,65 @@ SKIP: {
         }
         ok(-f $gzipped_build_log, "Located $gzipped_build_log");
     }
+
+    note("analyze_cpanm_build_logs()");
+
+    my $ranalysis_dir;
+    {
+        local $@;
+        eval { $self = Test::Against::Build->analyze_cpanm_build_logs([]); };
+        like($@, qr/analyze_cpanm_build_logs: Must supply hash ref as argument/,
+            "analyze_cpanm_build_logs: Got expected error message for non-hashref argument");
+    }
+
+    {
+        local $@;
+        eval { $self = Test::Against::Build->analyze_cpanm_build_logs(); };
+        like($@, qr/analyze_cpanm_build_logs: Must supply hash ref as argument/,
+            "analyze_cpanm_build_logs: Got expected error message for no argument");
+    }
+
+    {
+        local $@;
+        eval { $ranalysis_dir = $self->analyze_cpanm_build_logs( [ verbose => 1 ] ); };
+        like($@, qr/analyze_cpanm_build_logs: Must supply hash ref as argument/,
+            "analyze_cpanm_build_logs(): Got expected error message for lack of hash ref");
+    }
+
+    my $stdout = capture_stdout {
+        $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
+    };
+    ok(-d $ranalysis_dir,
+        "analyze_cpanm_build_logs() returned path to version-specific analysis directory '$ranalysis_dir'");
+    like($stdout,
+        qr/See results in $ranalysis_dir/s,
+        "analyze_cpanm_build_logs(): Got expected verbose output: cpanmdir"
+    );
+
+    note("analyze_json_logs()");
+
+    my $rv;
+    {
+        local $@;
+        eval { $rv = $self->analyze_json_logs( verbose => 1 ); };
+        like($@, qr/analyze_json_logs: Must supply hash ref as argument/,
+            "analyze_json_logs(): Got expected error message: absence of hash ref");
+    }
+
+    {
+        local $@;
+        eval { $rv = $self->analyze_json_logs( { verbose => 1, sep_char => "\t" } ); };
+        like($@, qr/analyze_json_logs: Currently only pipe \('\|'\) and comma \(','\) are supported as delimiter characters/,
+            "analyze_json_logs(): Got expected error message: unsupported delimiter");
+    }
+
+    my $fpsvfile = $self->analyze_json_logs( { verbose => 1 } );
+    ok($fpsvfile, "analyze_json_logs() returned true value");
+    ok(-f $fpsvfile, "Located '$fpsvfile'");
+
+    my $fcsvfile = $self->analyze_json_logs( { verbose => 1 , sep_char => ',' } );
+    ok($fcsvfile, "analyze_json_logs() returned true value");
+    ok(-f $fcsvfile, "Located '$fcsvfile'");
 }
 
 #################### TESTING SUBROUTINES ####################

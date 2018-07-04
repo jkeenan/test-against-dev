@@ -1,16 +1,16 @@
 package Test::Against::Build;
 use strict;
-use 5.10.1;
+use 5.14.0;
 our $VERSION = '0.08';
 use Carp;
-#use Cwd;
+use Cwd;
 use File::Basename;
 #use File::Fetch;
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir tempfile | );
-#use Archive::Tar;
-#use CPAN::cpanminus::reporter::RetainReports;
+use Archive::Tar;
+use CPAN::cpanminus::reporter::RetainReports;
 use Data::Dump ( qw| dd pp | );
 use JSON;
 use Path::Tiny;
@@ -38,10 +38,6 @@ Test::Against::Build - Test CPAN modules against specific Perl build
     $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
 
     $fcdvfile = $self->analyze_json_logs( { verbose => 1, sep_char => '|' } );
-
-    834:sub setup_results_directories {
-    933:sub run_cpanm {
-    1010:sub gzip_cpanm_build_log {
 
 =head1 DESCRIPTION
 
@@ -489,7 +485,7 @@ sub run_cpanm {
     }
     $self->{title} = $args->{title};
 
-    say "cpanm_dir: ", $self->get_cpanmdir() if $verbose;
+    say "cpanmdir: ", $self->get_cpanmdir() if $verbose;
     local $ENV{PERL_CPANM_HOME} = $self->{PERL_CPANM_HOME};
     local $ENV{PERL_CPAN_REPORTER_DIR} = $self->{PERL_CPAN_REPORTER_DIR};
 
@@ -527,10 +523,12 @@ sub gzip_cpanm_build_log {
     croak "Did not find symlink for build.log at $build_log_link"
         unless (-l $build_log_link);
     my $real_log = readlink($build_log_link);
+    $self->{timestamp} = (File::Spec->splitdir(dirname($real_log)))[-1] || '';
 
     my $gzipped_build_log_filename = join('.' => (
         $self->{title},
-        (File::Spec->splitdir(dirname($real_log)))[-1],
+        #(File::Spec->splitdir(dirname($real_log)))[-1],
+        $self->{timestamp},
         'build',
         'log',
         'gz'
@@ -544,22 +542,63 @@ sub gzip_cpanm_build_log {
     $self->{gzlog} = $gzlog;
 }
 
-
 =head2 C<analyze_cpanm_build_logs()>
 
 =over 4
 
 =item * Purpose
 
+Parse the F<build.log> created by running C<run_cpanm()>, creating JSON files
+which log the results of attempting to install each module in the list or
+file.
+
 =item * Arguments
 
+    $ranalysis_dir = $self->analyze_cpanm_build_logs( { verbose => 1 } );
+
+Hash reference which, at the present time, can only take one element:
+C<verbose>.  Optional.
+
 =item * Return Value
+
+String holding absolute path to the directory holding F<.log.json> files for a
+particular run of C<run_cpanm()>.
 
 =item * Comment
 
 =back
 
 =cut
+
+sub analyze_cpanm_build_logs {
+    my ($self, $args) = @_;
+    croak "analyze_cpanm_build_logs: Must supply hash ref as argument"
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
+    my $verbose = delete $args->{verbose} || '';
+
+    my $gzlog = $self->{gzlog};
+    my ($fh, $working_log) = tempfile('acbl_XXXXX', UNLINK => 1);
+    system(qq|gunzip -c $gzlog > $working_log|)
+        and croak "Unable to gunzip $gzlog to $working_log";
+
+    my $reporter = CPAN::cpanminus::reporter::RetainReports->new(
+      force => 1, # ignore mtime check on build.log
+      build_logfile => $working_log,
+      build_dir => $self->get_cpanmdir,
+      'ignore-versions' => 1,
+    );
+    croak "Unable to create new reporter for $working_log"
+        unless defined $reporter;
+    no warnings 'redefine';
+    local *CPAN::cpanminus::reporter::RetainReports::_check_cpantesters_config_data = sub { 1 };
+    #$reporter->set_report_dir($ranalysis_dir);
+    my $ranalysis_dir = $self->get_analysisdir;
+    $reporter->set_report_dir($ranalysis_dir);
+    $reporter->run;
+    say "See results in $ranalysis_dir" if $verbose;
+
+    return $ranalysis_dir;
+}
 
 
 =head2 C<analyze_json_logs()>
@@ -577,6 +616,100 @@ sub gzip_cpanm_build_log {
 =back
 
 =cut
+
+sub analyze_json_logs {
+    my ($self, $args) = @_;
+    croak "analyze_json_logs: Must supply hash ref as argument"
+        unless ( ( defined $args ) and ( ref($args) eq 'HASH' ) );
+    my $verbose     = delete $args->{verbose}   || '';
+    my $sep_char    = delete $args->{sep_char}  || '|';
+    croak "analyze_json_logs: Currently only pipe ('|') and comma (',') are supported as delimiter characters"
+        unless ($sep_char eq '|' or $sep_char eq ',');
+
+    # As a precaution, we archive the log.json files.
+
+    my $output = join('.' => (
+        $self->{title},
+        $self->{timestamp},
+        'log',
+        'json',
+        'gz'
+    ) );
+    my $foutput = File::Spec->catfile($self->get_storagedir(), $output);
+    say "Output will be: $foutput" if $verbose;
+
+    my $vranalysis_dir = $self->get_analysisdir;
+    opendir my $DIRH, $vranalysis_dir or croak "Unable to open $vranalysis_dir for reading";
+    my @json_log_files = sort map { File::Spec->catfile('analysis', $_) }
+        grep { m/\.log\.json$/ } readdir $DIRH;
+    closedir $DIRH or croak "Unable to close $vranalysis_dir after reading";
+    dd(\@json_log_files) if $verbose;
+
+    my $versioned_results_dir = $self->get_results_tree;
+    chdir $versioned_results_dir or croak "Unable to chdir to $versioned_results_dir";
+    my $cwd = cwd();
+    say "Now in $cwd" if $verbose;
+
+    my $tar = Archive::Tar->new;
+    $tar->add_files(@json_log_files);
+    no strict 'subs';
+    $tar->write($foutput, COMPRESS_GZIP);
+    use strict;
+    croak "$foutput not created" unless (-f $foutput);
+    say "Created $foutput" if $verbose;
+
+    # Having archived our log.json files, we now proceed to read them and to
+    # write a pipe- (or comma-) separated-values file summarizing the run.
+
+    my %data = ();
+    for my $log (@json_log_files) {
+        my $flog = File::Spec->catfile($cwd, $log);
+        my %this = ();
+        my $f = Path::Tiny::path($flog);
+        my $decoded;
+        {
+            local $@;
+            eval { $decoded = decode_json($f->slurp_utf8); };
+            if ($@) {
+                say STDERR "JSON decoding problem in $flog: <$@>";
+                eval { $decoded = JSON->new->decode($f->slurp_utf8); };
+            }
+        }
+        map { $this{$_} = $decoded->{$_} } ( qw| author dist distname distversion grade | );
+        $data{$decoded->{dist}} = \%this;
+    }
+    #pp(\%data);
+
+    my $cdvfile = join('.' => (
+        $self->{title},
+        $self->{timestamp},
+        (($sep_char eq ',') ? 'csv' : 'psv'),
+    ) );
+
+    my $fcdvfile = File::Spec->catfile($self->get_storagedir(), $cdvfile);
+    say "Output will be: $fcdvfile" if $verbose;
+
+    my @fields = ( qw| author distname distversion grade | );
+    my $columns = [
+        'dist',
+        map { "$self->{title}.$_" } @fields,
+    ];
+    my $psv = Text::CSV_XS->new({ binary => 1, auto_diag => 1, sep_char => $sep_char, eol => $/ });
+    open my $OUT, ">:encoding(utf8)", $fcdvfile
+        or croak "Unable to open $fcdvfile for writing";
+    $psv->print($OUT, $columns), "\n" or $psv->error_diag;
+    for my $dist (sort keys %data) {
+        $psv->print($OUT, [
+           $dist,
+           @{$data{$dist}}{@fields},
+        ]) or $psv->error_diag;
+    }
+    close $OUT or croak "Unable to close $fcdvfile after writing";
+    croak "$fcdvfile not created" unless (-f $fcdvfile);
+    say "Examine ", (($sep_char eq ',') ? 'comma' : 'pipe'), "-separated values in $fcdvfile" if $verbose;
+
+    return $fcdvfile;
+}
 
 
 =pod
