@@ -1,0 +1,64 @@
+# perl
+use 5.14.0;
+use warnings;
+use Archive::Tar;
+use Data::Dump ( qw| dd pp| );
+use Carp;
+use Cwd;
+use File::Spec;
+use Getopt::Long;
+use JSON ( qw| decode_json | );
+use Path::Tiny;
+
+my ($topdir, $gzfile) = (undef) x 2;
+my $verbose = '';
+
+GetOptions(
+    "topdir=s"      => \$topdir,
+    "gzfile=s"      => \$gzfile,
+    "verbose"       => \$verbose,
+) or croak "Unable to process command-line options";
+croak "Cannot locate $topdir" unless -d $topdir;
+croak "Cannot locate $gzfile" unless -f $gzfile;
+croak "Expect '.tgz', '.tar.gz' or '.gz' extension on $gzfile"
+    unless ($gzfile =~ m/(\.|\.tar\.|\.t)gz$/);
+
+chdir $topdir or croak "Unable to chdir to $topdir";
+my @extracted = Archive::Tar->extract_archive($gzfile, 1);
+say "Extracted ", scalar(@extracted), " files" if $verbose;
+my %good_json = ();
+my %bad_json = ();
+for my $log (@extracted) {
+    my $alog = File::Spec->catfile('analysis', $log);
+    validate_json($alog) or croak "Unable to process $alog";
+}
+if (scalar keys %bad_json) {
+    say scalar keys %bad_json, " problematic .json files:";
+    dd(\%bad_json);
+}
+if ($verbose) {
+    say scalar keys %good_json, " good .json files:";
+    dd(\%good_json);
+}
+
+say "\nFinished!" if $verbose;
+
+sub validate_json {
+    my $log = shift;
+    my $this_cwd = cwd();
+    my $flog = File::Spec->catfile($this_cwd, $log);
+    my $f = Path::Tiny::path($flog);
+	{
+        local $@;
+        my $decoded;
+        eval { $decoded = decode_json($f->slurp_utf8); };
+        if ($@) {
+            $bad_json{$log} = $@;
+        }
+        else {
+            $good_json{$log}++;
+        }
+    }
+    return 1;
+}
+__END__
