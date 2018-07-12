@@ -3,27 +3,36 @@ use strict;
 use 5.10.1;
 our $VERSION = '0.08';
 use Carp;
-#use Cwd;
-#use File::Basename;
-#use File::Fetch;
-#use File::Path ( qw| make_path | );
-#use File::Spec;
-#use File::Temp ( qw| tempdir tempfile | );
-#use Archive::Tar;
-#use CPAN::cpanminus::reporter::RetainReports;
 use Data::Dump ( qw| dd pp | );
-#use JSON;
-#use Path::Tiny;
-#use Perl::Download::FTP;
-#use Text::CSV_XS;
 
 =head1 NAME
 
 Test::Against::Dev::Sort - Sort Perl 5 development and RC releases in logical order
 
+=head1 SYNOPSIS
+
+    use Test::Against::Dev::Sort;
+
+    my $minor_version = 27;
+    $self = Test::Against::Dev::Sort->new($minor_version);
+
+    my @versions = ( qw|
+        perl-5.27.10
+        perl-5.28.0-RC4
+        perl-5.27.0
+        perl-5.27.9
+        perl-5.28.0-RC1
+        perl-5.27.11
+    | );
+    my $sorted_versions_ref = $self->sort_dev_and_rc_versions(\@versions);
+
+    my $non_matches_ref = $self->get_non_matches();
+
+    $self->dump_non_matches();
+
 =head1 DESCRIPTION
 
-Given a list of strings representing Perl 5 releases in a specific development cycle, ...
+Given a list of strings representing Perl 5 releases in a I<specific development cycle>, ...
 
     perl-5.27.10
     perl-5.28.0-RC4
@@ -32,7 +41,16 @@ Given a list of strings representing Perl 5 releases in a specific development c
     perl-5.28.0-RC1
     perl-5.27.11
 
-... sort the list in "logical" order.  By B<logical order> is meant:
+... sort the list in I<logical> order.
+
+By B<specific development cycle> is meant a series of development releases
+like C<perl-5.27.0>, C<perl-5.27.1>, ... C<perl-5.27.11> (or perhaps
+C<perl-5.27.12>) followed by RC (Release Candidate) releases beginning with
+C<perl-5.28.0-RC1>, C<perl-5.28.0-RC2>, ..., but B<not> including production
+releases (C<perl-5.28.0>), maintenance releases (C<perl-5.28.1>) or RCs for
+maintainance releases (C<perl-5.28.1-RC1>).
+
+By B<logical order> is meant:
 
 =over 4
 
@@ -54,7 +72,7 @@ Given a list of strings representing Perl 5 releases in a specific development c
 
 =item * Have a patch version number of C<0> (as we are not concerned with maintenance releases).
 
-=item * Have a string in the format C<-RCxx> following the patch version number, where C<xx> is a one- or two-digit number starting with C<1>.
+=item * Have a string in the format C<-RCx> following the patch version number, where C<x> is a one-digit number starting with C<1>.
 
 =back
 
@@ -73,11 +91,66 @@ For the example above, the desired result would be:
 
 sub new {
     my ($class, $minor_dev) = @_;
+    croak "Minor version must be integer"
+        unless (defined($minor_dev) and ($minor_dev =~ m/^\d+$/));
     croak "Minor version must be odd" unless $minor_dev % 2;
     croak "Minor version must be >= 7" unless $minor_dev >= 7;
 
-    my $data = {};
+    my $minor_rc = $minor_dev + 1;
+    my $dev_pattern = qr/perl-5\.($minor_dev)\.(\d{1,2})/;
+    my $rc_pattern  = qr/perl-5\.($minor_rc)\.(0)-RC(\d)/;
+    my $data = {
+        minor_dev   => $minor_dev,
+        minor_rc    => $minor_rc,
+        dev_pattern => $dev_pattern,
+        rc_pattern  => $rc_pattern,
+    };
     return bless $data, $class;
+}
+
+sub sort_dev_and_rc_versions {
+    my ($self, $linesref) = @_;
+    my %lines;
+    for my $l (@$linesref) {
+        my $rv = $self->_match($l);
+        if (defined($rv)) {
+           $lines{$l} = $rv;
+        }
+    }
+    #dd(\%lines);
+    my @sorted = sort {
+        $lines{$a}{minor} <=> $lines{$b}{minor} ||
+        $lines{$a}{patch} <=> $lines{$b}{patch} ||
+        $lines{$a}{rc}    cmp $lines{$b}{rc}
+    } keys %lines;
+    return [ @sorted ];
+}
+
+sub _match {
+    my ($self, $str) = @_;
+    my ($minor, $patch, $rc) = ('') x 3;
+    if ($str =~ m/^$self->{dev_pattern}$/) {
+        ($minor, $patch) = ($1,$2);
+    }
+    elsif ($str =~ m/^$self->{rc_pattern}$/) {
+        ($minor, $patch, $rc) = ($1,$2,$3);
+    }
+    else {
+        push @{$self->{non_matches}}, $str;
+        return;
+    }
+    return { minor => $minor, patch => $patch, rc => $rc };
+}
+
+sub get_non_matches {
+    my $self = shift;
+    return $self->{non_matches} // [];
+}
+
+sub dump_non_matches {
+    my $self = shift;
+    dd($self->{non_matches});
+    return 1;
 }
 
 1;
