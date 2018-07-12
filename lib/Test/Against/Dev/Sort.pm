@@ -25,6 +25,12 @@ Test::Against::Dev::Sort - Sort Perl 5 development and RC releases in logical or
 
 Given a list of strings representing Perl 5 releases in a specific development cycle, ...
 
+    perl-5.27.10
+    perl-5.28.0-RC4
+    perl-5.27.0
+    perl-5.27.9
+    perl-5.28.0-RC1
+    perl-5.27.11
 
 ... sort the list in "logical" order.  By B<logical order> is meant:
 
@@ -34,7 +40,7 @@ Given a list of strings representing Perl 5 releases in a specific development c
 
 =over 4
 
-=item * Have an odd minor version number.
+=item * Have an odd minor version number greater than or equal to C<7>.
 
 =item * Have a one- or two-digit patch version number starting at 0.
 
@@ -54,10 +60,24 @@ Given a list of strings representing Perl 5 releases in a specific development c
 
 =back
 
+For the example above, the desired result would be:
+
+    perl-5.27.0
+    perl-5.27.9
+    perl-5.27.10
+    perl-5.27.11
+    perl-5.28.0-RC1
+    perl-5.28.0-RC4
+
 =cut
 
 sub new {
+    my ($class, $minor_dev) = @_;
+    croak "Minor version must be odd" unless $minor_dev % 2;
+    croak "Minor version must be >= 7" unless $minor_dev >= 7;
 
+    my $data = {};
+    return bless $data, $class;
 }
 
 1;
