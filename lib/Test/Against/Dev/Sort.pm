@@ -178,7 +178,7 @@ Any element in the arrayref passed as the argument which does not qualify is sil
 
 sub sort_dev_and_rc_versions {
     my ($self, $linesref) = @_;
-    @{$self->{non_matches}} = ();
+    $self->{non_matches} = [];
     my %lines;
     for my $l (@$linesref) {
         my $rv = $self->_match($l);
@@ -237,6 +237,10 @@ C<sort_dev_and_rc_versions()> which do not qualify as being the Perl version
 string for a development or RC release in the annual development cycle passed
 as an argument C<new()>.
 
+=item * Comment
+
+Not meaningful except when called after C<sort_dev_and_rc_versions()>.
+
 =back
 
 =cut
@@ -263,6 +267,10 @@ None; all data needed is already inside the object.
 =item * Return Value
 
 Perl true value.
+
+=item * Comment
+
+Not meaningful except when called after C<sort_dev_and_rc_versions()>.
 
 =back
 
