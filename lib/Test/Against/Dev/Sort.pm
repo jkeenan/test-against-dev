@@ -56,15 +56,26 @@ By B<logical order> is meant:
 
 =item * Development releases:
 
+                        5.27.1
+    major version:      5
+    minor version:        27
+    patch version:           1
+
 =over 4
 
 =item * Have an odd minor version number greater than or equal to C<7>.
 
-=item * Have a one- or two-digit patch version number starting at 0.
+=item * Have a one- or two-digit patch version number starting at C<0>.
 
 =back
 
 =item * RC (Release Candidate) releases:
+
+                        5.28.0-RC4
+    major version:      5
+    minor version:        28
+    patch version:           0
+    RC version:                  4
 
 =over 4
 
@@ -87,6 +98,30 @@ For the example above, the desired result would be:
     perl-5.28.0-RC1
     perl-5.28.0-RC4
 
+=head1 METHODS
+
+=head2 c<new()>
+
+=over 4
+
+=item * Purpose
+
+Test::Against::Dev::Sort constructor.
+
+=item * Arguments
+
+    my $minor_version = 27;
+    $self = Test::Against::Dev::Sort->new($minor_version);
+
+Odd-numbered integer, >= C<7>, representing the minor version for a Perl 5
+monthly development release.
+
+=item * Return Value
+
+Test::Against::Dev::Sort object.
+
+=back
+
 =cut
 
 sub new {
@@ -108,8 +143,42 @@ sub new {
     return bless $data, $class;
 }
 
+=head2 C<sort_dev_and_rc_versions()>
+
+=over 4
+
+=item * Purpose
+
+=item * Arguments
+
+    my @versions = ( qw|
+        perl-5.27.10
+        perl-5.28.0-RC4
+        perl-5.27.0
+        perl-5.27.9
+        perl-5.28.0-RC1
+        perl-5.27.11
+    | );
+    my $sorted_versions_ref = $self->sort_dev_and_rc_versions(\@versions);
+
+Reference to an array holding a list of Perl version strings for development
+or RC releases for a single annual development cycle (as denoted by the minor
+version number passed to C<new()>).
+
+=item * Return Value
+
+Reference to an array holding that list sorted in logical order (as defined above).
+
+=item * Comment
+
+Any element in the arrayref passed as the argument which does not qualify is silently added to a list accessible via the C<get_non_matches()> and C<get_dump_matches()> methods.
+=back
+
+=cut
+
 sub sort_dev_and_rc_versions {
     my ($self, $linesref) = @_;
+    @{$self->{non_matches}} = ();
     my %lines;
     for my $l (@$linesref) {
         my $rv = $self->_match($l);
@@ -142,10 +211,62 @@ sub _match {
     return { minor => $minor, patch => $patch, rc => $rc };
 }
 
+=back
+
+=head2 C<get_non_matches()>
+
+=over 4
+
+=item * Purpose
+
+Identify those elements of the arrayref passed to
+C<sort_dev_and_rc_versions()> which do not qualify as being the Perl version
+string for a development or RC release in the annual development cycle passed
+as an argument C<new()>.
+
+=item * Arguments
+
+    my $non_matches_ref = $self->get_non_matches();
+
+None; all data needed is already inside the object.
+
+=item * Return Value
+
+Reference to an array holding a list of elements in the arrayref passed to
+C<sort_dev_and_rc_versions()> which do not qualify as being the Perl version
+string for a development or RC release in the annual development cycle passed
+as an argument C<new()>.
+
+=back
+
+=cut
+
 sub get_non_matches {
     my $self = shift;
     return $self->{non_matches} // [];
 }
+
+=head2 C<dump_non_matches()>
+
+=over 4
+
+=item * Purpose
+
+Pretty-print to STDOUT the list returned by C<get_non_matches()>.
+
+=item * Arguments
+
+    my $non_matches_ref = $self->get_non_matches();
+
+None; all data needed is already inside the object.
+
+=item * Return Value
+
+Perl true value.
+
+=back
+
+=cut
 
 sub dump_non_matches {
     my $self = shift;

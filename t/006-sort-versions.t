@@ -2,13 +2,9 @@
 # t/006-sort-versions.t
 use 5.14.0;
 use warnings;
-#use Capture::Tiny ( qw| capture_stdout capture_stderr | );
+use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Carp;
 use Data::Dump ( qw| dd pp | );
-#use Cwd;
-#use File::Path 2.15 (qw| make_path |);
-#use File::Spec;
-#use File::Temp ( qw| tempfile tempdir |);
 use Test::More;
 
 BEGIN { use_ok( 'Test::Against::Dev::Sort' ); }
@@ -123,6 +119,12 @@ my @valid_versions = ( qw|
     is_deeply($aref, $sort_expected, "Got expected sort") and dd($aref);
     is(scalar @{$self->get_non_matches()},
         scalar @bad_versions, "Got expected number of non-matches") or dd($self->get_non_matches());
+    my $stdout = capture_stdout {
+        $self->dump_non_matches();
+    };
+    for my $el (@bad_versions) {
+        like($stdout, qr/$el/s, "Got expected bad version '$el' in STDOUT");
+    }
 }
 
 
