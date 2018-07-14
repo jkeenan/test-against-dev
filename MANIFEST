@@ -1,6 +1,7 @@
 Changes
 lib/Test/Against/Build.pm
 lib/Test/Against/Dev.pm
+lib/Test/Against/Dev/Auxiliary.pm
 lib/Test/Against/Dev/Sort.pm
 LICENSE
 Makefile.PL
@@ -14,6 +15,9 @@ t/003-test-against-dev.t
 t/004-new-from-existing.t
 t/005-test-against-build.t
 t/006-sort-versions.t
+t/007-auxiliary.t
+t/data/cpan-river-1000-perl-5.27.0.psv
+t/data/cpan-river-1000-perl-5.27.1.psv
 t/data/four-modules.txt
 t/data/two-modules.txt
 Todo
