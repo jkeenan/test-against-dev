@@ -68,6 +68,7 @@ for my $f ($fbaseline_psv, $fnext_psv) {
     my (@lines_in, $master_data, $verbose, $columns, $expected_columns,
         $lines_out, @lines_out,
         $master_columns_ref, $master_psv, $rv,
+        $message,
     );
 
     @lines_in = path($fbaseline_target)->lines_utf8;
@@ -102,6 +103,7 @@ for my $f ($fbaseline_psv, $fnext_psv) {
         $results_dir,
         "$title-$v-master.psv",
     );
+    ok(! -f $master_psv, "Master PSV file $master_psv does not yet exist");
 
     $rv = write_master_psv($master_data, $master_columns_ref, $master_psv);
     ok($rv, "write_master_psv() returned true value");
@@ -113,24 +115,51 @@ for my $f ($fbaseline_psv, $fnext_psv) {
 
     # Now we simulate the next month.
 
-#    $fnext_target = File::Spec->catfile(
-#        $dirs_needed{'perl-5.27.1_storage'},
-#        $next_psv,
-#    );
-#    copy $fnext_psv => $fnext_target
-#        or croak "Unable to copy $fnext_psv to $dirs_needed{'perl-5.27.1_storage'}";
-#    ok(-f $fnext_target,
-#        "Copied $fnext_psv to $dirs_needed{'perl-5.27.1_storage'} for testing");
+    $fnext_target = File::Spec->catfile(
+        $dirs_needed{'perl-5.27.1_storage'},
+        $next_psv,
+    );
+    copy $fnext_psv => $fnext_target
+        or croak "Unable to copy $fnext_psv to $dirs_needed{'perl-5.27.1_storage'}";
+    ok(-f $fnext_target,
+        "Copied $fnext_psv to $dirs_needed{'perl-5.27.1_storage'} for testing");
 
-##    @lines_in = path($fnext_target)->lines_utf8;
-##    $verbose = 1;
-##    $columns = read_one_psv($fnext_target, $master_data, $verbose);
-##    is_deeply($columns, $expected_columns,
-##        "Got expected columns when reading $fnext_target");
-##    $lines_out = scalar keys %{$master_data};
-##    # The number of elements in $master_data should be 1 less than
-##    # the line count in the .psv file -- that 1 being the header row.
-##    cmp_ok($lines_out, '>=', scalar(@lines_in) - 1, "Got expected count");
+    @lines_in = path($fnext_target)->lines_utf8;
+    $master_data = {};
+    $verbose = 1;
+    $columns = read_one_psv($fnext_target, $master_data, $verbose);
+    $expected_columns = [
+      "dist",
+      "perl-5.27.1.author",
+      "perl-5.27.1.distname",
+      "perl-5.27.1.distversion",
+      "perl-5.27.1.grade",
+    ];
+    is_deeply($columns, $expected_columns,
+        "Got expected columns when reading $fbaseline_target");
+    $lines_out = scalar keys %{$master_data};
+    # The number of elements in $master_data should be 1 less than
+    # the line count in the .psv file -- that 1 being the header row.
+    cmp_ok($lines_out, '==', scalar(@lines_in) - 1, "Got expected count");
+
+    $master_columns_ref = [
+      "dist",
+      "perl-5.27.0.author",
+      "perl-5.27.0.distname",
+      "perl-5.27.0.distversion",
+      "perl-5.27.0.grade",
+      "perl-5.27.1.author",
+      "perl-5.27.1.distname",
+      "perl-5.27.1.distversion",
+      "perl-5.27.1.grade",
+    ];
+    $rv = write_master_psv($master_data, $master_columns_ref, $master_psv);
+    ok($rv, "write_master_psv() returned true value");
+    ok(-f $master_psv, "Consolidated PSV files into $master_psv");
+    @lines_out = path($master_psv)->lines_utf8;
+    $message = "The line count in master psv $master_psv is now " . scalar(@lines_out) . "\n";
+    $message .= "It may differ from the line count in the most recent monthly psv, $fnext_target, which is " . scalar(@lines_in);
+    pass($message);
 
     chdir $start_dir or croak "Unable to chdir back to $start_dir";
 }
