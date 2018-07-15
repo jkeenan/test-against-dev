@@ -1,6 +1,6 @@
 package Test::Against::Dev;
 use strict;
-use 5.10.1;
+use 5.14.0;
 our $VERSION = '0.09';
 use Carp;
 use Cwd;

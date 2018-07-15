@@ -1,22 +1,17 @@
 # -*- perl -*-
-# t/007-auxiliary.t
+# t/007-process-ppv.t
 use 5.14.0;
 use warnings;
-#use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Carp;
 use Cwd;
 use Data::Dump ( qw| dd pp | );
-use File::Basename;
 use File::Copy;
 use File::Path 2.15 ( qw| make_path | );
 use File::Spec;
 use File::Temp qw( tempdir );
 use Path::Tiny;
-use Test::More qw( no_plan );
-use Test::Against::Dev::Auxiliary ( qw|
-    read_one_psv
-    write_master_psv
-| );
+use Test::More;
+use Test::Against::Dev::ProcessPSV;
 
 my $start_dir = cwd();
 my $title = 'cpan-river-1000';
@@ -65,16 +60,24 @@ for my $f ($fbaseline_psv, $fnext_psv) {
     ok(-f $fbaseline_target,
         "Copied $fbaseline_psv to $dirs_needed{'perl-5.27.0_storage'} for testing");
 
-    my (@lines_in, $master_data, $verbose, $columns, $expected_columns,
+    #my (@lines_in, $master_data, $verbose, $columns, $expected_columns,
+    my (@lines_in, $verbose, $columns_seen, $expected_columns,
         $lines_out, @lines_out,
         $master_columns_ref, $master_psv, $rv,
         $message,
     );
 
     @lines_in = path($fbaseline_target)->lines_utf8;
-    $master_data = {};
+    #$master_data = {};
     $verbose = 1;
-    $columns = read_one_psv($fbaseline_target, $master_data, $verbose);
+    my $ppsv = Test::Against::Dev::ProcessPSV->new( { verbose => $verbose } );
+    ok(defined $ppsv, "new() returned defined value");
+    isa_ok($ppsv, 'Test::Against::Dev::ProcessPSV');
+
+    $columns_seen = $ppsv->read_one_psv( {
+        psvfile => $fbaseline_target,
+    } );
+
     $expected_columns = [
       "dist",
       "perl-5.27.0.author",
@@ -82,9 +85,9 @@ for my $f ($fbaseline_psv, $fnext_psv) {
       "perl-5.27.0.distversion",
       "perl-5.27.0.grade",
     ];
-    is_deeply($columns, $expected_columns,
+    is_deeply($columns_seen, $expected_columns,
         "Got expected columns when reading $fbaseline_target");
-    $lines_out = scalar keys %{$master_data};
+    $lines_out = scalar keys %{$ppsv->{master_data}};
     # The number of elements in $master_data should be 1 less than
     # the line count in the .psv file -- that 1 being the header row.
     cmp_ok($lines_out, '==', scalar(@lines_in) - 1, "Got expected count");
@@ -105,7 +108,10 @@ for my $f ($fbaseline_psv, $fnext_psv) {
     );
     ok(! -f $master_psv, "Master PSV file $master_psv does not yet exist");
 
-    $rv = write_master_psv($master_data, $master_columns_ref, $master_psv);
+    $rv = $ppsv->write_master_psv({
+        master_columns  => $master_columns_ref,
+        master_psvfile  => $master_psv,
+     });
     ok($rv, "write_master_psv() returned true value");
     ok(-f $master_psv, "Consolidated PSV files into $master_psv");
     @lines_out = path($master_psv)->lines_utf8;
@@ -125,9 +131,12 @@ for my $f ($fbaseline_psv, $fnext_psv) {
         "Copied $fnext_psv to $dirs_needed{'perl-5.27.1_storage'} for testing");
 
     @lines_in = path($fnext_target)->lines_utf8;
-    $master_data = {};
-    $verbose = 1;
-    $columns = read_one_psv($fnext_target, $master_data, $verbose);
+    my $ppsv2 = Test::Against::Dev::ProcessPSV->new();
+    ok(defined $ppsv2, "new() returned defined value");
+    isa_ok($ppsv2, 'Test::Against::Dev::ProcessPSV');
+    $columns_seen = $ppsv2->read_one_psv( {
+        psvfile => $fnext_target,
+    } );
     $expected_columns = [
       "dist",
       "perl-5.27.1.author",
@@ -135,10 +144,10 @@ for my $f ($fbaseline_psv, $fnext_psv) {
       "perl-5.27.1.distversion",
       "perl-5.27.1.grade",
     ];
-    is_deeply($columns, $expected_columns,
-        "Got expected columns when reading $fbaseline_target");
-    $lines_out = scalar keys %{$master_data};
-    # The number of elements in $master_data should be 1 less than
+    is_deeply($columns_seen, $expected_columns,
+        "Got expected columns when reading $fnext_target");
+    $lines_out = scalar keys %{$ppsv2->{master_data}};
+    # The number of elements in $ppsv2->{master_data} should be 1 less than
     # the line count in the .psv file -- that 1 being the header row.
     cmp_ok($lines_out, '==', scalar(@lines_in) - 1, "Got expected count");
 
@@ -153,7 +162,10 @@ for my $f ($fbaseline_psv, $fnext_psv) {
       "perl-5.27.1.distversion",
       "perl-5.27.1.grade",
     ];
-    $rv = write_master_psv($master_data, $master_columns_ref, $master_psv);
+    $rv = $ppsv2->write_master_psv({
+        master_columns  => $master_columns_ref,
+        master_psvfile  => $master_psv,
+     });
     ok($rv, "write_master_psv() returned true value");
     ok(-f $master_psv, "Consolidated PSV files into $master_psv");
     @lines_out = path($master_psv)->lines_utf8;
@@ -163,3 +175,5 @@ for my $f ($fbaseline_psv, $fnext_psv) {
 
     chdir $start_dir or croak "Unable to chdir back to $start_dir";
 }
+
+done_testing();
