@@ -12,13 +12,13 @@ use Path::Tiny;
 
 =head1 NAME
 
-unpack-log-json-gz - Correctly unpack a C<.log.json.gz> file created by F<Test::Against::Dev>
+unpack-log-json-gz - Correctly unpack a C<.log.json.tar.gz> file created by F<Test::Against::Dev>
 
 =head1 SYNOPSIS
 
     perl scripts/unpack-log-json-gz \
         --topdir=/home/username/tmp/scratch \
-        --gzfile=/home/username/var/tad/results/perl-5.29.0/storage/cpan-river-3000.perl-5.29.0.log.json.gz
+        --gzfile=/home/username/var/tad/results/perl-5.29.0/storage/cpan-river-3000.perl-5.29.0.log.json.tar.gz
 
 =head1 DESCRIPTION
 
@@ -44,7 +44,7 @@ The program takes 3 command-line options, 2 of which are mandatory.
 
     perl scripts/unpack-log-json-gz \
         --topdir=/home/username/tmp/scratch \
-        --gzfile=/home/username/var/tad/results/perl-5.29.0/storage/cpan-river-3000.perl-5.29.0.log.json.gz \
+        --gzfile=/home/username/var/tad/results/perl-5.29.0/storage/cpan-river-3000.perl-5.29.0.log.json.tar.gz \
         --verbose 1>output 2>&1
 
 =over 4

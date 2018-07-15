@@ -1165,6 +1165,7 @@ sub analyze_json_logs {
         $self->{perl_version},
         'log',
         'json',
+        'tar',
         'gz'
     ) );
     my $foutput = File::Spec->catfile($self->{storage_dir}, $output);

@@ -12,7 +12,7 @@ t/001-new.t
 t/002-perform-tarball-download.t
 t/003-test-against-dev.t
 t/004-new-from-existing.t
-t/005-tab-new.t
+t/005-test-against-build.t
 t/006-sort-versions.t
 t/data/four-modules.txt
 t/data/two-modules.txt
