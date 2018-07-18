@@ -1000,14 +1000,15 @@ sub run_cpanm {
         $self->get_this_cpanm,
         @modules,
     );
-    eval {
+    {
         local $@;
-        my $rv = system(@cmd);
+        my $rv;
+        eval { $rv = system(@cmd); };
         say "<$@>" if $@;
         if ($verbose) {
             say $self->get_this_cpanm(), " exited with ", $rv >> 8;
         }
-    };
+    }
     my $gzipped_build_log = $self->gzip_cpanm_build_log();
     say "See gzipped build.log in $gzipped_build_log" if $verbose;
 
