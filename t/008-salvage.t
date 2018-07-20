@@ -29,6 +29,13 @@ my ($fh, $tfile) = tempfile('008_cpanm_build_log_XXXXX', UNLINK => 1);
     note("Tests of error conditions:  defects in call syntax");
     {
         local $@;
+        eval { $self = Test::Against::Dev::Salvage->new(); };
+        like($@, qr/Must supply hash ref as argument/,
+            "Test::Against::Dev::Salvage->new(): Got expected error message: no defined argument");
+    }
+
+    {
+        local $@;
         eval {
             $self = Test::Against::Dev::Salvage->new( [
                 path_to_cpanm_build_log => $tfile,
