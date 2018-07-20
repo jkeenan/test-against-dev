@@ -2,6 +2,7 @@ Changes
 lib/Test/Against/Build.pm
 lib/Test/Against/Dev.pm
 lib/Test/Against/Dev/ProcessPSV.pm
+lib/Test/Against/Dev/Salvage.pm
 lib/Test/Against/Dev/Sort.pm
 LICENSE
 Makefile.PL
@@ -20,5 +21,6 @@ t/008-salvage.t
 t/data/cpan-river-1000-perl-5.27.0.psv
 t/data/cpan-river-1000-perl-5.27.1.psv
 t/data/four-modules.txt
+t/data/sample.build.log
 t/data/two-modules.txt
 Todo
