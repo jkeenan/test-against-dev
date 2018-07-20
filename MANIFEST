@@ -16,6 +16,7 @@ t/004-new-from-existing.t
 t/005-test-against-build.t
 t/006-sort-versions.t
 t/007-process-ppv.t
+t/008-salvage.t
 t/data/cpan-river-1000-perl-5.27.0.psv
 t/data/cpan-river-1000-perl-5.27.1.psv
 t/data/four-modules.txt
