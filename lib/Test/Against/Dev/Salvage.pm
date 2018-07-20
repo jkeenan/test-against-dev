@@ -5,6 +5,7 @@ our $VERSION = '0.11';
 our @ISA = ('Test::Against::Dev');
 use Carp;
 use Cwd;
+use File::Basename ( qw| dirname | );
 use File::Path ( qw| make_path | );
 use File::Spec;
 use File::Temp ( qw| tempdir tempfile | );
@@ -54,21 +55,13 @@ sub new {
     #     .../.cpanm/work/1234567890.12345/build.log
     # If we can't do any of this, we croak.
 
-#    my $build_log_link = catfile($self->get_release_dir(), '.cpanm', 'build.log');
-#    croak "Could not find build.log symlink at $build_log_link" unless (-l $build_log_link);
-#    #say "XXX: $build_log_link";
-#    my $real_log = readlink($build_log_link);
-#    #say "YYY: $real_log";
-#    croak "Could not locate target of build.log symlink" unless (-f $real_log);
-
     my ($cpanm_dir);
     if (! -l $blp) {
         # If we've supplied the full path to the build.log file itself
-        say "AAA: not a symlink";
+        say "Value for 'path_to_cpanm_build_log' is not a symlink" if $verbose;
         my ($volume,$directories,$file) = File::Spec->splitpath($blp);
         my @directories = File::Spec->splitdir($directories);
         pop @directories if $directories[-1] eq '';
-        dd(\@directories) if $verbose;
         my $partial = join('/' => @directories[-3 .. -1]);
         unless(
             ($directories[-1] =~ m/^\d+\.\d+$/) and
@@ -80,7 +73,6 @@ sub new {
         }
         else {
             say "Found directories ending $partial" if $verbose;
-            dd([ @directories[0 .. ($#directories - 2)] ]) if $verbose;
             $cpanm_dir = File::Spec->catdir(@directories[0 .. ($#directories - 2)]);
             say "cpanm_dir: $cpanm_dir" if $verbose;
             my $possible_symlink = File::Spec->catfile($cpanm_dir, 'build.log');
@@ -94,10 +86,11 @@ sub new {
     }
     else {
         # If we've only supplied the full path to the symlink to the build.log
-        say "BBB: TODO";
-        #    my $real_log = readlink($build_log_link);
-        #    #say "YYY: $real_log";
-        #    croak "Could not locate target of build.log symlink" unless (-f $real_log);
+        say "Value for 'path_to_cpanm_build_log' is a symlink" if $verbose;
+        my $real_log = readlink($blp);
+        croak "Could not locate target of build.log symlink" unless (-f $real_log);
+        $cpanm_dir = dirname($blp);
+        say "cpanm_dir: $cpanm_dir" if $verbose;
     }
 
     my $vresults_dir = File::Spec->catdir($args->{results_dir}, $data->{perl_version});

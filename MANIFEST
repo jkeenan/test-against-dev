@@ -23,4 +23,5 @@ t/data/cpan-river-1000-perl-5.27.1.psv
 t/data/four-modules.txt
 t/data/sample.build.log
 t/data/two-modules.txt
+t/lib/Helpers.pm
 Todo
