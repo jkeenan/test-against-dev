@@ -153,77 +153,8 @@ my ($fh, $tfile) = tempfile('008_cpanm_build_log_XXXXX', UNLINK => 1);
 
 }
 
-{
-    note("Test passing absolute path to build.log file");
-
-    my $application_dir = tempdir(CLEANUP => 1);
-    my $title = 'salvage-cpan-river';
-    my $perl_version = 'perl-5.29.0';
-    my ($results_dir, $b) = setup_tests($application_dir, $perl_version, 'file');
-    my $self = Test::Against::Dev::Salvage->new( {
-        path_to_cpanm_build_log => $b,
-        perl_version            => $perl_version,
-        title                   => $title,
-        results_dir             => $results_dir,
-        verbose                 => 1,
-    } );
-    ok(defined $self, "Test::Against::Dev::Salvage->new() returned defined value");
-    isa_ok($self, 'Test::Against::Dev::Salvage');
-
-    note("Test inheritance from Test::Against::Dev");
-
-    isa_ok($self, 'Test::Against::Dev');
-    can_ok('Test::Against::Dev::Salvage', ( qw|
-        gzip_cpanm_build_log
-        analyze_cpanm_build_logs
-        analyze_json_logs
-        get_cpanm_dir
-    | ) );
-
-    note("Post-constructor methods");
-
-    my $gzipped_build_log = $self->gzip_cpanm_build_log();
-    ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-
-    # blocks used in both t/004 and t/008
-    test_TAD_analyze_methods($self);
-}
-
-{
-    note("Test passing absolute path of symlink to build.log file");
-
-    my $application_dir = tempdir(CLEANUP => 1);
-    my $title = 'salvage-cpan-river';
-    my $perl_version = 'perl-5.29.0';
-    my ($results_dir, $b) = setup_tests($application_dir, $perl_version, 'symlink');
-    my $self = Test::Against::Dev::Salvage->new( {
-        path_to_cpanm_build_log => $b,
-        perl_version            => $perl_version,
-        title                   => $title,
-        results_dir             => $results_dir,
-        verbose                 => 1,
-    } );
-    ok(defined $self, "Test::Against::Dev::Salvage->new() returned defined value");
-    isa_ok($self, 'Test::Against::Dev::Salvage');
-
-    note("Test inheritance from Test::Against::Dev");
-
-    isa_ok($self, 'Test::Against::Dev');
-    can_ok('Test::Against::Dev::Salvage', ( qw|
-        gzip_cpanm_build_log
-        analyze_cpanm_build_logs
-        analyze_json_logs
-        get_cpanm_dir
-    | ) );
-
-    note("Post-constructor methods");
-
-    my $gzipped_build_log = $self->gzip_cpanm_build_log();
-    ok(-f $gzipped_build_log, "Located $gzipped_build_log");
-
-    # blocks used in both t/004 and t/008
-    test_TAD_analyze_methods($self);
-}
+run_tests();
+run_tests('verbose');
 
 # Try to ensure that we get back to where we started so that tempdirs can be
 # cleaned up
@@ -272,6 +203,83 @@ sub setup_tests {
         ok(-d $d, "Created $d for testing");
     }
     return ($results_dir, ($choice eq 'file') ? $build_log : $build_log_link);
+}
+
+sub run_tests {
+    my $verbose = shift || '';
+    note("Running tests ", ($verbose ? 'with' : 'without'), " verbose output");
+
+    {
+        note("Test passing absolute path to build.log file");
+
+        my $application_dir = tempdir(CLEANUP => 1);
+        my $title = 'salvage-cpan-river';
+        my $perl_version = 'perl-5.29.0';
+        my ($results_dir, $b) = setup_tests($application_dir, $perl_version, 'file');
+        my $self = Test::Against::Dev::Salvage->new( {
+            path_to_cpanm_build_log => $b,
+            perl_version            => $perl_version,
+            title                   => $title,
+            results_dir             => $results_dir,
+            verbose                 => $verbose,
+        } );
+        ok(defined $self, "Test::Against::Dev::Salvage->new() returned defined value");
+        isa_ok($self, 'Test::Against::Dev::Salvage');
+
+        note("Test inheritance from Test::Against::Dev");
+
+        isa_ok($self, 'Test::Against::Dev');
+        can_ok('Test::Against::Dev::Salvage', ( qw|
+            gzip_cpanm_build_log
+            analyze_cpanm_build_logs
+            analyze_json_logs
+            get_cpanm_dir
+        | ) );
+
+        note("Post-constructor methods");
+
+        my $gzipped_build_log = $self->gzip_cpanm_build_log();
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+
+        # blocks used in both t/004 and t/008
+        test_TAD_analyze_methods($self);
+    }
+
+    {
+        note("Test passing absolute path of symlink to build.log file");
+
+        my $application_dir = tempdir(CLEANUP => 1);
+        my $title = 'salvage-cpan-river';
+        my $perl_version = 'perl-5.29.0';
+        my ($results_dir, $b) = setup_tests($application_dir, $perl_version, 'symlink');
+        my $self = Test::Against::Dev::Salvage->new( {
+            path_to_cpanm_build_log => $b,
+            perl_version            => $perl_version,
+            title                   => $title,
+            results_dir             => $results_dir,
+            verbose                 => $verbose,
+        } );
+        ok(defined $self, "Test::Against::Dev::Salvage->new() returned defined value");
+        isa_ok($self, 'Test::Against::Dev::Salvage');
+
+        note("Test inheritance from Test::Against::Dev");
+
+        isa_ok($self, 'Test::Against::Dev');
+        can_ok('Test::Against::Dev::Salvage', ( qw|
+            gzip_cpanm_build_log
+            analyze_cpanm_build_logs
+            analyze_json_logs
+            get_cpanm_dir
+        | ) );
+
+        note("Post-constructor methods");
+
+        my $gzipped_build_log = $self->gzip_cpanm_build_log();
+        ok(-f $gzipped_build_log, "Located $gzipped_build_log");
+
+        # blocks used in both t/004 and t/008
+        test_TAD_analyze_methods($self);
+    }
 }
 
 __END__
