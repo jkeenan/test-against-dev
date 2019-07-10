@@ -14,7 +14,7 @@ use Test::Against::Dev;
 
 =head1 NAME
 
-Test::Against::Dev::Salvage - Parse a F<cpanm> F<build.log> when C<run_cpanm()> existed prematurely.
+Test::Against::Dev::Salvage - Parse a F<cpanm> F<build.log> when C<run_cpanm()> exited prematurely.
 
 =cut
 
