@@ -168,7 +168,8 @@ SKIP: {
     my $good_perl = $ENV{PERL_AUTHOR_TESTING_INSTALLED_PERL};
     croak "Could not locate '$good_perl'" unless (-x $good_perl);
     my ($good_path) = $good_perl =~ s{^(.*?)/bin/perl$}{$1}r;
-    my $tdir2 = tempdir(CLEANUP => 1);
+    #my $tdir2 = tempdir(CLEANUP => 1);
+    my $tdir2 = tempdir();
     setup_test_directories_results_only($tdir2);
     $self = Test::Against::Build->new({
         build_tree => $good_path,
