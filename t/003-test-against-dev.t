@@ -9,7 +9,7 @@ use Carp;
 use File::Temp ( qw| tempdir |);
 use Data::Dump ( qw| dd pp | );
 use Capture::Tiny ( qw| capture_stdout capture_stderr | );
-use Test::RequiresInternet ('ftp.funet.fi' => 21);
+use Test::RequiresInternet;
 use Test::Against::Dev;
 
 my $tdir = tempdir(CLEANUP => 1);
@@ -20,9 +20,6 @@ $self = Test::Against::Dev->new( {
 } );
 isa_ok ($self, 'Test::Against::Dev');
 
-my $host = 'ftp.funet.fi';
-my $hostdir = '/pub/languages/perl/CPAN/src/5.0';
-
 SKIP: {
     skip 'Live FTP download', 20
         unless $ENV{PERL_ALLOW_NETWORK_TESTING} and $ENV{PERL_AUTHOR_TESTING};
@@ -32,8 +29,7 @@ SKIP: {
     note("Performing live FTP download of Perl tarball;\n  this may take a while.");
     $stdout = capture_stdout {
         ($tarball_path, $work_dir) = $self->perform_tarball_download( {
-            host                => $host,
-            hostdir             => $hostdir,
+            path                => 'src/5.0',
             perl_version        => 'perl-5.27.6',
             compression         => 'gz',
             verbose             => 1,
