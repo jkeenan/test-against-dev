@@ -12,7 +12,8 @@ use Capture::Tiny ( qw| capture_stdout capture_stderr | );
 use Test::RequiresInternet;
 use Test::Against::Dev;
 
-my $tdir = tempdir(CLEANUP => 1);
+#my $tdir = tempdir(CLEANUP => 1);
+my $tdir = tempdir();
 my $self;
 
 $self = Test::Against::Dev->new( {
