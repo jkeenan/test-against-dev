@@ -153,7 +153,7 @@ SKIP: {
     $stdout = capture_stdout {
         ($tarball_path, $work_dir) = $self->perform_tarball_download( {
             path                => 'src/5.0',
-            perl_version        => 'perl-5.27.2',
+            perl_version        => 'perl-5.43.10',
             compression         => 'xz',
             verbose             => 1,
             mock                => 1,
@@ -171,7 +171,7 @@ SKIP: {
         $stdout = capture_stdout {
             ($tarball_path, $work_dir) = $self->perform_tarball_download( {
                 path                => 'src/5.0',
-                perl_version        => 'perl-5.27.2',
+                perl_version        => 'perl-5.43.10',
                 compression         => 'xz',
                 verbose             => 1,
                 mock                => 0,
