@@ -813,6 +813,7 @@ sub fetch_cpanm {
     $self->{cpanm_dir} = $cpanm_dir;
 
     my $bin_dir = $self->get_bin_dir();
+    my $this_cpan = File::Spec->catfile($bin_dir, 'cpan');
     my $this_cpanm = File::Spec->catfile($bin_dir, 'cpanm');
     # If cpanm is already installed in bin_dir, we don't need to try to
     # reinstall it.
@@ -820,9 +821,8 @@ sub fetch_cpanm {
         say "'$this_cpanm' already installed" if $verbose;
     }
     else {
-       say "Fetching 'cpanm' from $uri" if $verbose;
-       my $ff = File::Fetch->new(uri => $uri)->fetch(to => $bin_dir)
-           or croak "Unable to fetch 'cpanm' from $uri";
+        system(qq|$this_cpan App::cpanminus|)
+            and croak "Unable to install cpanm via $this_cpan";
     }
     my $cnt = chmod 0755, $this_cpanm;
     croak "Unable to make '$this_cpanm' executable" unless $cnt;
