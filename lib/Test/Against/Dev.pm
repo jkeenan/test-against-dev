@@ -15,6 +15,7 @@ use Data::Dump ( qw| dd pp | );
 use JSON;
 use Path::Tiny;
 use Text::CSV_XS;
+use URI;
 
 =head1 NAME
 
@@ -535,7 +536,8 @@ sub perform_tarball_download {
     $self->{release_dir} = $this_release_dir;
 
     my $this_tarball = "$self->{perl_version}.tar.$args->{compression}";
-    my $uri = join '/' => ($base_url, $args->{path}, $this_tarball);
+    my $uri = URI->new($base_url);
+    $uri->path(File::Spec->catdir("", $args->{path}, $this_tarball));
 
     unless ($mock) {
         if (! $self->{work_dir}) {
